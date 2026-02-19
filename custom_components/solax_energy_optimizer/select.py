@@ -45,7 +45,6 @@ class StrategySelect(CoordinatorEntity[EnergyOptimizerCoordinator], SelectEntity
         self._attr_unique_id = f"{entry.entry_id}_{ENTITY_CURRENT_STRATEGY}"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry.entry_id)},
-            "name": "Solax Energy Optimizer",
         }
 
     @property

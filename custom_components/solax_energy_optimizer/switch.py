@@ -52,7 +52,6 @@ class AutomationEnabledSwitch(
         self._attr_unique_id = f"{entry.entry_id}_{ENTITY_AUTOMATION_ENABLED}"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry.entry_id)},
-            "name": "Solax Energy Optimizer",
         }
 
     @property
@@ -90,7 +89,6 @@ class ManualOverrideSwitch(
         self._attr_unique_id = f"{entry.entry_id}_{ENTITY_MANUAL_OVERRIDE}"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry.entry_id)},
-            "name": "Solax Energy Optimizer",
         }
 
     @property
@@ -126,7 +124,6 @@ class DryRunSwitch(CoordinatorEntity[EnergyOptimizerCoordinator], SwitchEntity):
         self._attr_unique_id = f"{entry.entry_id}_{ENTITY_DRY_RUN}"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry.entry_id)},
-            "name": "Solax Energy Optimizer",
         }
 
     @property
