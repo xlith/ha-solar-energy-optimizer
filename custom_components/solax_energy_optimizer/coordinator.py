@@ -407,14 +407,20 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         else:
             data.next_action = ACTION_IDLE
 
-    def _parse_time(self, time_str: str) -> datetime:
-        """Parse time string to datetime."""
+    def _parse_time(self, time_str: str | datetime) -> datetime:
+        """Parse time string or datetime to datetime."""
         try:
-            # Ensure time_str is actually a string
-            if not isinstance(time_str, str):
-                _LOGGER.warning("Expected string for time parsing, got %s: %s", type(time_str).__name__, time_str)
-                return datetime.now()
-            return datetime.fromisoformat(time_str.replace("Z", "+00:00"))
+            # If already a datetime object, return it directly
+            if isinstance(time_str, datetime):
+                return time_str
+
+            # If it's a string, parse it
+            if isinstance(time_str, str):
+                return datetime.fromisoformat(time_str.replace("Z", "+00:00"))
+
+            # If neither string nor datetime, log and return current time
+            _LOGGER.warning("Expected string or datetime for time parsing, got %s: %s", type(time_str).__name__, time_str)
+            return datetime.now()
         except (ValueError, AttributeError, TypeError) as e:
-            _LOGGER.warning("Could not parse time string '%s': %s", time_str, str(e))
+            _LOGGER.warning("Could not parse time '%s': %s", time_str, str(e))
             return datetime.now()
