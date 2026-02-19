@@ -118,14 +118,24 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             inverter_state = self.hass.states.get(inverter_entity)
             if inverter_state:
                 try:
-                    data.battery_soc = float(inverter_state.state)
+                    state_value = inverter_state.state
+                    _LOGGER.debug("Battery SOC entity %s has state: %s (type: %s)", inverter_entity, state_value, type(state_value))
+
+                    # Skip unavailable/unknown states
+                    if state_value in ("unavailable", "unknown", None, ""):
+                        _LOGGER.warning("Battery SOC entity %s is unavailable", inverter_entity)
+                    else:
+                        data.battery_soc = float(state_value)
                 except (ValueError, TypeError) as e:
-                    _LOGGER.warning(
-                        "Could not parse battery SOC from %s: state='%s', error=%s",
+                    _LOGGER.error(
+                        "Could not parse battery SOC from %s: state='%s', type=%s, error=%s",
                         inverter_entity,
                         inverter_state.state,
-                        e,
+                        type(inverter_state.state).__name__,
+                        str(e),
                     )
+            else:
+                _LOGGER.warning("Battery SOC entity %s not found", inverter_entity)
 
             # Get solar forecast
             solcast_entity = self.config_entry.data[CONF_SOLCAST_ENTITY]
