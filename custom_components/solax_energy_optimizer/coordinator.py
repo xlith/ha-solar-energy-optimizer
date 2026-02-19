@@ -61,7 +61,6 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             _LOGGER,
             name=DOMAIN,
             update_interval=DEFAULT_UPDATE_INTERVAL,
-            config_entry=entry,
         )
         self.config_entry = entry
         self._current_strategy = STRATEGY_MINIMIZE_COST
