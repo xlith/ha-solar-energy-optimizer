@@ -4,14 +4,12 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from homeassistant.const import Platform
-from homeassistant.helpers import device_registry as dr
-
 from .const import DOMAIN
 from .coordinator import EnergyOptimizerCoordinator
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
+    from homeassistant.const import Platform
     from homeassistant.core import HomeAssistant, ServiceCall
 
     type EnergyOptimizerConfigEntry = ConfigEntry[EnergyOptimizerCoordinator]
@@ -21,9 +19,9 @@ _LOGGER = logging.getLogger(__name__)
 SERVICE_TRIGGER_OPTIMIZATION = "trigger_optimization"
 
 PLATFORMS: list[Platform] = [
-    Platform.SENSOR,
-    Platform.SWITCH,
-    Platform.SELECT,
+    "sensor",
+    "switch",
+    "select",
 ]
 
 
@@ -39,6 +37,8 @@ async def async_setup_entry(
     entry.runtime_data = coordinator
 
     # Register device
+    from homeassistant.helpers import device_registry as dr
+
     device_registry = dr.async_get(hass)
     device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
