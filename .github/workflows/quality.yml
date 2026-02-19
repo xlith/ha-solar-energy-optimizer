@@ -69,9 +69,9 @@ jobs:
         run: |
           python -c "
           import sys
-          sys.path.insert(0, 'custom_components/solax_energy_optimizer')
-          import const
-          import coordinator
+          sys.path.insert(0, '.')
+          from custom_components.solax_energy_optimizer import const
+          from custom_components.solax_energy_optimizer import coordinator
           print('✓ All modules can be imported')
           "
 
