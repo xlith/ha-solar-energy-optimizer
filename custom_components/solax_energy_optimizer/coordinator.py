@@ -195,7 +195,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             return
 
         # Sort by price
-        prices_sorted = sorted(prices_ahead, key=lambda x: x.get("price", 0))
+        prices_sorted = sorted(prices_ahead, key=lambda x: float(x.get("price", 0)))
         lowest_price = prices_sorted[0] if prices_sorted else None
         highest_price = prices_sorted[-1] if prices_sorted else None
 
@@ -208,9 +208,9 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         max_soc = float(self.config_entry.data.get(CONF_MAX_SOC, 95))
 
         # Calculate price thresholds (bottom 25% and top 25%)
-        price_range = highest_price["price"] - lowest_price["price"]
-        low_threshold = lowest_price["price"] + (price_range * 0.25)
-        high_threshold = highest_price["price"] - (price_range * 0.25)
+        price_range = float(highest_price["price"]) - float(lowest_price["price"])
+        low_threshold = float(lowest_price["price"]) + (price_range * 0.25)
+        high_threshold = float(highest_price["price"]) - (price_range * 0.25)
 
         # Decision logic
         if current_price <= low_threshold and data.battery_soc and data.battery_soc < max_soc:
@@ -296,7 +296,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             data.next_action = ACTION_IDLE
             return
 
-        avg_price = sum(p.get("price", 0) for p in prices_ahead) / len(prices_ahead)
+        avg_price = sum(float(p.get("price", 0)) for p in prices_ahead) / len(prices_ahead)
         current_price = data.current_price or 0
 
         if current_price < avg_price * 0.9 and data.battery_soc and data.battery_soc < max_soc:
