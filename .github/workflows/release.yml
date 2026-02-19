@@ -1,0 +1,78 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    name: Prepare release
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+          else
+            VERSION="v$(date +%Y.%m.%d)"
+          fi
+          echo "version=${VERSION#v}" >> $GITHUB_OUTPUT
+          echo "Version: ${VERSION#v}"
+
+      - name: Update manifest version
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+          sed -i "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" custom_components/solax_energy_optimizer/manifest.json
+          echo "Updated manifest.json to version $VERSION"
+          cat custom_components/solax_energy_optimizer/manifest.json
+
+      - name: Create release archive
+        run: |
+          cd custom_components
+          zip -r ../solax_energy_optimizer.zip solax_energy_optimizer/
+          cd ..
+          echo "✓ Created release archive"
+
+      - name: Upload release asset
+        if: github.event_name == 'release'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./solax_energy_optimizer.zip
+          asset_name: solax_energy_optimizer.zip
+          asset_content_type: application/zip
+
+      - name: Generate release notes
+        if: github.event_name == 'release'
+        run: |
+          echo "# Release ${{ steps.get_version.outputs.version }}" > release_notes.md
+          echo "" >> release_notes.md
+          echo "## Installation" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### Via HACS (Recommended)" >> release_notes.md
+          echo "1. Go to HACS → Integrations" >> release_notes.md
+          echo "2. Click ⋮ → Custom repositories" >> release_notes.md
+          echo "3. Add: \`${{ github.repository }}\`" >> release_notes.md
+          echo "4. Category: Integration" >> release_notes.md
+          echo "5. Install Solax Energy Optimizer" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### Manual Installation" >> release_notes.md
+          echo "1. Download \`solax_energy_optimizer.zip\`" >> release_notes.md
+          echo "2. Extract to \`custom_components/solax_energy_optimizer\`" >> release_notes.md
+          echo "3. Restart Home Assistant" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "## What's Changed" >> release_notes.md
+          echo "See the [CHANGELOG](CHANGELOG.md) for details." >> release_notes.md
+
+      - name: Validate release
+        run: |
+          test -f solax_energy_optimizer.zip
+          unzip -t solax_energy_optimizer.zip
+          echo "✓ Release archive is valid"

@@ -1,0 +1,14 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Documentation
+    url: https://github.com/xlith/solax-energy-optimizer/blob/main/README.md
+    about: Check the README for setup and usage instructions
+  - name: Installation Guide
+    url: https://github.com/xlith/solax-energy-optimizer/blob/main/INSTALLATION.md
+    about: Detailed installation and configuration instructions
+  - name: Development Guide
+    url: https://github.com/xlith/solax-energy-optimizer/blob/main/DEVELOPMENT.md
+    about: Technical documentation for developers
+  - name: Home Assistant Community
+    url: https://community.home-assistant.io/
+    about: Ask questions and discuss with the Home Assistant community

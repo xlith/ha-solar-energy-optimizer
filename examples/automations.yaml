@@ -1,0 +1,124 @@
+# Example automations for Solax Energy Optimizer
+
+# Notify when energy action changes
+- alias: "Energy Action Notification"
+  description: "Send notification when the optimizer changes its recommended action"
+  trigger:
+    - platform: state
+      entity_id: sensor.solax_energy_optimizer_next_action
+  condition:
+    - condition: template
+      value_template: "{{ trigger.to_state.state != trigger.from_state.state }}"
+  action:
+    - service: notify.mobile_app
+      data:
+        title: "Energy Optimizer"
+        message: >
+          Action changed to: {{ states('sensor.solax_energy_optimizer_next_action') }}
+          Battery SOC: {{ state_attr('sensor.solax_energy_optimizer_next_action', 'battery_soc') }}%
+          Current price: €{{ state_attr('sensor.solax_energy_optimizer_next_action', 'current_price') }}/kWh
+
+# Switch to grid independence at night
+- alias: "Night Mode - Grid Independence"
+  description: "Switch to grid independence strategy at night"
+  trigger:
+    - platform: time
+      at: "22:00:00"
+  action:
+    - service: select.select_option
+      target:
+        entity_id: select.solax_energy_optimizer_strategy
+      data:
+        option: "grid_independence"
+
+# Switch to cost minimization during the day
+- alias: "Day Mode - Minimize Cost"
+  description: "Switch to cost minimization strategy during the day"
+  trigger:
+    - platform: time
+      at: "06:00:00"
+  action:
+    - service: select.select_option
+      target:
+        entity_id: select.solax_energy_optimizer_strategy
+      data:
+        option: "minimize_cost"
+
+# Trigger optimization when prices update
+- alias: "Optimize on Price Update"
+  description: "Trigger optimization when new prices are available"
+  trigger:
+    - platform: state
+      entity_id: sensor.frank_energie_current_price
+  condition:
+    - condition: state
+      entity_id: switch.solax_energy_optimizer_automation_enabled
+      state: "on"
+  action:
+    - service: solax_energy_optimizer.trigger_optimization
+      data: {}
+
+# Weekly savings report
+- alias: "Weekly Savings Report"
+  description: "Send weekly report of energy savings"
+  trigger:
+    - platform: time
+      at: "20:00:00"
+  condition:
+    - condition: time
+      weekday:
+        - sun
+  action:
+    - service: notify.mobile_app
+      data:
+        title: "Weekly Energy Report"
+        message: >
+          This week's savings: €{{ states('sensor.solax_energy_optimizer_monthly_savings') }}
+          Strategy: {{ states('select.solax_energy_optimizer_strategy') }}
+
+# Enable manual override when away
+- alias: "Away Mode - Manual Override"
+  description: "Enable manual override when away from home"
+  trigger:
+    - platform: state
+      entity_id: person.your_name
+      to: "not_home"
+      for:
+        hours: 2
+  action:
+    - service: switch.turn_on
+      target:
+        entity_id: switch.solax_energy_optimizer_manual_override
+
+# Disable manual override when home
+- alias: "Home Mode - Auto Optimization"
+  description: "Disable manual override when returning home"
+  trigger:
+    - platform: state
+      entity_id: person.your_name
+      to: "home"
+  action:
+    - service: switch.turn_off
+      target:
+        entity_id: switch.solax_energy_optimizer_manual_override
+
+# Alert on low battery during high prices
+- alias: "Low Battery Alert During High Prices"
+  description: "Alert when battery is low during expensive electricity periods"
+  trigger:
+    - platform: numeric_state
+      entity_id: sensor.solax_battery_soc
+      below: 30
+  condition:
+    - condition: numeric_state
+      entity_id: sensor.frank_energie_current_price
+      above: 0.25
+  action:
+    - service: notify.mobile_app
+      data:
+        title: "Energy Alert"
+        message: >
+          Battery is low ({{ states('sensor.solax_battery_soc') }}%)
+          during high electricity prices (€{{ states('sensor.frank_energie_current_price') }}/kWh)
+        data:
+          priority: high

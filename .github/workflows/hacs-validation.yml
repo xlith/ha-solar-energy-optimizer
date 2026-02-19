@@ -1,0 +1,45 @@
+name: HACS Validation
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    name: Validate for HACS
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: HACS Validation
+        uses: hacs/action@main
+        with:
+          category: integration
+
+      - name: Validate manifest
+        run: |
+          python3 -c "import json; json.load(open('custom_components/solax_energy_optimizer/manifest.json'))"
+          echo "✓ manifest.json is valid JSON"
+
+      - name: Validate strings
+        run: |
+          python3 -c "import json; json.load(open('custom_components/solax_energy_optimizer/strings.json'))"
+          echo "✓ strings.json is valid JSON"
+
+      - name: Check required files
+        run: |
+          test -f custom_components/solax_energy_optimizer/__init__.py
+          test -f custom_components/solax_energy_optimizer/manifest.json
+          test -f custom_components/solax_energy_optimizer/strings.json
+          test -f hacs.json
+          test -f README.md
+          test -f LICENSE
+          echo "✓ All required files present"

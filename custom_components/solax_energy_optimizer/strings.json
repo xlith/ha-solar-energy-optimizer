@@ -1,0 +1,91 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Configure Solax Energy Optimizer",
+        "description": "Set up your energy optimization system by connecting to your existing integrations.",
+        "data": {
+          "solax_inverter_entity": "Solax Inverter Battery SOC Entity",
+          "solcast_entity": "Solcast Solar Forecast Entity",
+          "frank_energie_entity": "Frank Energie Price Entity",
+          "battery_capacity": "Battery Capacity",
+          "max_charge_rate": "Maximum Charge Rate",
+          "max_discharge_rate": "Maximum Discharge Rate",
+          "min_soc": "Minimum State of Charge",
+          "max_soc": "Maximum State of Charge"
+        },
+        "data_description": {
+          "solax_inverter_entity": "Select the sensor that reports your battery's state of charge (SOC)",
+          "solcast_entity": "Select the Solcast sensor that provides solar production forecasts",
+          "frank_energie_entity": "Select the Frank Energie sensor that provides current electricity prices",
+          "battery_capacity": "Total capacity of your battery in kWh",
+          "max_charge_rate": "Maximum rate at which your battery can charge in kW",
+          "max_discharge_rate": "Maximum rate at which your battery can discharge in kW",
+          "min_soc": "Minimum battery charge level to maintain (safety buffer)",
+          "max_soc": "Maximum battery charge level to prevent overcharging"
+        }
+      }
+    },
+    "error": {
+      "entity_not_found": "The selected entity could not be found. Please ensure all integrations are properly configured."
+    },
+    "abort": {
+      "already_configured": "This configuration is already set up."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Optimizer Options",
+        "data": {
+          "min_soc": "Minimum State of Charge",
+          "max_soc": "Maximum State of Charge"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "next_action": {
+        "name": "Next action"
+      },
+      "next_action_time": {
+        "name": "Next action time"
+      },
+      "daily_cost": {
+        "name": "Daily cost"
+      },
+      "daily_savings": {
+        "name": "Daily savings"
+      },
+      "monthly_cost": {
+        "name": "Monthly cost"
+      },
+      "monthly_savings": {
+        "name": "Monthly savings"
+      }
+    },
+    "switch": {
+      "automation_enabled": {
+        "name": "Automation enabled"
+      },
+      "manual_override": {
+        "name": "Manual override"
+      },
+      "dry_run": {
+        "name": "Dry run mode"
+      }
+    },
+    "select": {
+      "strategy": {
+        "name": "Strategy",
+        "state": {
+          "minimize_cost": "Minimize cost",
+          "maximize_self_consumption": "Maximize self-consumption",
+          "grid_independence": "Grid independence",
+          "balanced": "Balanced"
+        }
+      }
+    }
+  }
+}

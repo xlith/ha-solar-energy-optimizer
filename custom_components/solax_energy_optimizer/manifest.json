@@ -1,0 +1,13 @@
+{
+  "domain": "solax_energy_optimizer",
+  "name": "Solax Energy Optimizer",
+  "codeowners": ["@xlith"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/xlith/solax-energy-optimizer",
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/xlith/solax-energy-optimizer/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}

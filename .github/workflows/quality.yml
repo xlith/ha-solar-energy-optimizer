@@ -1,0 +1,148 @@
+name: Code Quality
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    name: Lint and Format Check
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff black isort
+
+      - name: Run ruff
+        run: |
+          ruff check custom_components/solax_energy_optimizer/
+        continue-on-error: true
+
+      - name: Check formatting with black
+        run: |
+          black --check --diff custom_components/solax_energy_optimizer/
+        continue-on-error: true
+
+      - name: Check import sorting with isort
+        run: |
+          isort --check-only --diff custom_components/solax_energy_optimizer/
+        continue-on-error: true
+
+  validate-python:
+    runs-on: ubuntu-latest
+    name: Validate Python Syntax
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Home Assistant
+        run: |
+          pip install homeassistant voluptuous
+
+      - name: Validate Python syntax
+        run: |
+          python -m py_compile custom_components/solax_energy_optimizer/*.py
+          echo "✓ All Python files have valid syntax"
+
+      - name: Check imports
+        run: |
+          python -c "
+          import sys
+          sys.path.insert(0, 'custom_components/solax_energy_optimizer')
+          import const
+          import coordinator
+          print('✓ All modules can be imported')
+          "
+
+  validate-json:
+    runs-on: ubuntu-latest
+    name: Validate JSON Files
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate manifest.json
+        run: |
+          python3 -m json.tool custom_components/solax_energy_optimizer/manifest.json > /dev/null
+          echo "✓ manifest.json is valid"
+
+      - name: Validate strings.json
+        run: |
+          python3 -m json.tool custom_components/solax_energy_optimizer/strings.json > /dev/null
+          echo "✓ strings.json is valid"
+
+      - name: Validate hacs.json
+        run: |
+          python3 -m json.tool hacs.json > /dev/null
+          echo "✓ hacs.json is valid"
+
+  check-structure:
+    runs-on: ubuntu-latest
+    name: Check Integration Structure
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check required files
+        run: |
+          # Core files
+          test -f custom_components/solax_energy_optimizer/__init__.py
+          test -f custom_components/solax_energy_optimizer/manifest.json
+          test -f custom_components/solax_energy_optimizer/const.py
+          test -f custom_components/solax_energy_optimizer/config_flow.py
+          test -f custom_components/solax_energy_optimizer/coordinator.py
+          test -f custom_components/solax_energy_optimizer/strings.json
+
+          # Platform files
+          test -f custom_components/solax_energy_optimizer/sensor.py
+          test -f custom_components/solax_energy_optimizer/switch.py
+          test -f custom_components/solax_energy_optimizer/select.py
+
+          # Documentation
+          test -f README.md
+          test -f LICENSE
+          test -f hacs.json
+
+          echo "✓ All required files present"
+
+      - name: Check manifest fields
+        run: |
+          python3 << 'EOF'
+          import json
+
+          with open('custom_components/solax_energy_optimizer/manifest.json') as f:
+              manifest = json.load(f)
+
+          required = ['domain', 'name', 'codeowners', 'config_flow',
+                     'documentation', 'integration_type', 'iot_class',
+                     'issue_tracker', 'version']
+
+          missing = [field for field in required if field not in manifest]
+
+          if missing:
+              print(f"❌ Missing required fields: {missing}")
+              exit(1)
+          else:
+              print("✓ All required manifest fields present")
+          EOF

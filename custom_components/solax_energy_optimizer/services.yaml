@@ -1,0 +1,12 @@
+trigger_optimization:
+  name: Trigger optimization
+  description: Manually trigger an immediate optimization cycle
+  fields:
+    entity_id:
+      name: Entity
+      description: Select entity (strategy selector) to trigger optimization for
+      required: true
+      selector:
+        entity:
+          integration: solax_energy_optimizer
+          domain: select
