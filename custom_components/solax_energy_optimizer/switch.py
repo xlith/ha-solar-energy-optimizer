@@ -4,14 +4,15 @@ from __future__ import annotations
 from typing import Any, TYPE_CHECKING
 
 from homeassistant.components.switch import SwitchEntity
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, ENTITY_AUTOMATION_ENABLED, ENTITY_MANUAL_OVERRIDE, ENTITY_DRY_RUN
 from .coordinator import EnergyOptimizerCoordinator
 
 if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
+    from homeassistant.helpers.entity_platform import AddEntitiesCallback
+
     from . import EnergyOptimizerConfigEntry
 
 
