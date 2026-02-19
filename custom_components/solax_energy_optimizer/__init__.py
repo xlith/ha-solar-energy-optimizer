@@ -5,12 +5,13 @@ import logging
 from typing import TYPE_CHECKING
 
 from .const import DOMAIN
-from .coordinator import EnergyOptimizerCoordinator
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
     from homeassistant.const import Platform
     from homeassistant.core import HomeAssistant, ServiceCall
+
+    from .coordinator import EnergyOptimizerCoordinator
 
     type EnergyOptimizerConfigEntry = ConfigEntry[EnergyOptimizerCoordinator]
 
@@ -29,6 +30,8 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: EnergyOptimizerConfigEntry
 ) -> bool:
     """Set up Solax Energy Optimizer from a config entry."""
+    from .coordinator import EnergyOptimizerCoordinator
+
     coordinator = EnergyOptimizerCoordinator(hass, entry)
 
     # Fetch initial data so we have data when entities subscribe
