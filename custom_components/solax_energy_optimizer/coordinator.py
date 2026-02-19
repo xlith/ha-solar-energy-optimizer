@@ -3,11 +3,13 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+
+if TYPE_CHECKING:
+    from homeassistant.config_entries import ConfigEntry
 
 from .const import (
     ACTION_CHARGE,
@@ -205,8 +207,8 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             return
 
         current_price = data.current_price or 0
-        min_soc = self.config_entry.data.get(CONF_MIN_SOC, 20)
-        max_soc = self.config_entry.data.get(CONF_MAX_SOC, 95)
+        min_soc = float(self.config_entry.data.get(CONF_MIN_SOC, 20))
+        max_soc = float(self.config_entry.data.get(CONF_MAX_SOC, 95))
 
         # Calculate price thresholds (bottom 25% and top 25%)
         price_range = highest_price["price"] - lowest_price["price"]
@@ -244,8 +246,8 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             return
 
         current_time = datetime.now()
-        min_soc = self.config_entry.data.get(CONF_MIN_SOC, 20)
-        max_soc = self.config_entry.data.get(CONF_MAX_SOC, 95)
+        min_soc = float(self.config_entry.data.get(CONF_MIN_SOC, 20))
+        max_soc = float(self.config_entry.data.get(CONF_MAX_SOC, 95))
 
         # Find next significant solar production period
         next_solar_period = None
@@ -268,8 +270,8 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
 
     def _optimize_grid_independence(self, data: EnergyOptimizerData) -> None:
         """Optimize for grid independence."""
-        min_soc = self.config_entry.data.get(CONF_MIN_SOC, 20)
-        max_soc = self.config_entry.data.get(CONF_MAX_SOC, 95)
+        min_soc = float(self.config_entry.data.get(CONF_MIN_SOC, 20))
+        max_soc = float(self.config_entry.data.get(CONF_MAX_SOC, 95))
 
         # Always try to keep battery charged when solar is available
         if data.battery_soc:
@@ -285,8 +287,8 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         """Optimize with a balanced approach."""
         # Combine cost optimization with self-consumption
         # Simplified: charge during low prices or high solar, discharge during high prices
-        min_soc = self.config_entry.data.get(CONF_MIN_SOC, 20)
-        max_soc = self.config_entry.data.get(CONF_MAX_SOC, 95)
+        min_soc = float(self.config_entry.data.get(CONF_MIN_SOC, 20))
+        max_soc = float(self.config_entry.data.get(CONF_MAX_SOC, 95))
 
         if not data.prices_today:
             data.next_action = ACTION_IDLE
