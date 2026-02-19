@@ -1,24 +1,21 @@
 """Data update coordinator for Solax Energy Optimizer."""
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime
 import logging
 from typing import TYPE_CHECKING, Any
 
-from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
+    from homeassistant.core import HomeAssistant
 
 from .const import (
     ACTION_CHARGE,
     ACTION_DISCHARGE,
     ACTION_IDLE,
-    CONF_BATTERY_CAPACITY,
     CONF_FRANK_ENERGIE_ENTITY,
-    CONF_MAX_CHARGE_RATE,
-    CONF_MAX_DISCHARGE_RATE,
     CONF_MAX_SOC,
     CONF_MIN_SOC,
     CONF_SOLCAST_ENTITY,
@@ -246,7 +243,6 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             return
 
         current_time = datetime.now()
-        min_soc = float(self.config_entry.data.get(CONF_MIN_SOC, 20))
         max_soc = float(self.config_entry.data.get(CONF_MAX_SOC, 95))
 
         # Find next significant solar production period
@@ -270,7 +266,6 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
 
     def _optimize_grid_independence(self, data: EnergyOptimizerData) -> None:
         """Optimize for grid independence."""
-        min_soc = float(self.config_entry.data.get(CONF_MIN_SOC, 20))
         max_soc = float(self.config_entry.data.get(CONF_MAX_SOC, 95))
 
         # Always try to keep battery charged when solar is available
