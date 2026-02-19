@@ -222,9 +222,22 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         max_soc = float(self.config_entry.data.get(CONF_MAX_SOC, 95))
 
         # Calculate price thresholds (bottom 25% and top 25%)
-        price_range = float(highest_price["price"]) - float(lowest_price["price"])
-        low_threshold = float(lowest_price["price"]) + (price_range * 0.25)
-        high_threshold = float(highest_price["price"]) - (price_range * 0.25)
+        try:
+            lowest_price_val = float(lowest_price.get("price", 0))
+            highest_price_val = float(highest_price.get("price", 0))
+        except (AttributeError, TypeError, ValueError) as e:
+            _LOGGER.error(
+                "Error accessing price values: lowest_price=%s, highest_price=%s, error=%s",
+                lowest_price,
+                highest_price,
+                str(e),
+            )
+            data.next_action = ACTION_IDLE
+            return
+
+        price_range = highest_price_val - lowest_price_val
+        low_threshold = lowest_price_val + (price_range * 0.25)
+        high_threshold = highest_price_val - (price_range * 0.25)
 
         # Decision logic
         if current_price <= low_threshold and data.battery_soc and data.battery_soc < max_soc:
