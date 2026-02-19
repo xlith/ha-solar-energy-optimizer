@@ -236,10 +236,12 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         """Optimize to minimize energy costs."""
         # Find lowest and highest prices in the next 24 hours
         if not data.prices_today:
+            _LOGGER.warning("No price data available - setting action to idle")
             data.next_action = ACTION_IDLE
             return
 
         # Debug log the price data structure
+        _LOGGER.debug("Price data available: %d entries", len(data.prices_today))
         _LOGGER.debug("Price data structure: %s", data.prices_today[:2] if len(data.prices_today) >= 2 else data.prices_today)
 
         current_hour = datetime.now().hour
@@ -258,8 +260,11 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
                 continue
 
         if not prices_ahead:
+            _LOGGER.warning("No future prices found - setting action to idle")
             data.next_action = ACTION_IDLE
             return
+
+        _LOGGER.debug("Found %d future price entries", len(prices_ahead))
 
         # Sort by price
         prices_sorted = sorted(prices_ahead, key=lambda x: float(x.get("price", 0)))
@@ -267,6 +272,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         highest_price = prices_sorted[-1] if prices_sorted else None
 
         if not lowest_price or not highest_price:
+            _LOGGER.warning("Could not determine price range - setting action to idle")
             data.next_action = ACTION_IDLE
             return
 
@@ -292,28 +298,41 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         low_threshold = lowest_price_val + (price_range * 0.25)
         high_threshold = highest_price_val - (price_range * 0.25)
 
+        _LOGGER.info(
+            "Price analysis - Current: %.2f, Range: %.2f to %.2f, Low threshold: %.2f, High threshold: %.2f",
+            current_price,
+            lowest_price_val,
+            highest_price_val,
+            low_threshold,
+            high_threshold,
+        )
+
+        _LOGGER.info(
+            "Battery state - SOC: %s%%, Min: %s%%, Max: %s%%",
+            data.battery_soc,
+            min_soc,
+            max_soc,
+        )
+
         # Decision logic
         if current_price <= low_threshold and data.battery_soc and data.battery_soc < max_soc:
             # Charge when price is low
             data.next_action = ACTION_CHARGE
             data.target_soc = max_soc
             data.next_action_time = datetime.now()
+            _LOGGER.info("Decision: CHARGE (price %.2f <= low threshold %.2f, SOC %s%% < max %s%%)",
+                        current_price, low_threshold, data.battery_soc, max_soc)
         elif current_price >= high_threshold and data.battery_soc and data.battery_soc > min_soc:
             # Discharge when price is high
             data.next_action = ACTION_DISCHARGE
             data.target_soc = min_soc
             data.next_action_time = datetime.now()
+            _LOGGER.info("Decision: DISCHARGE (price %.2f >= high threshold %.2f, SOC %s%% > min %s%%)",
+                        current_price, high_threshold, data.battery_soc, min_soc)
         else:
             # Idle in moderate price range
             data.next_action = ACTION_IDLE
-
-        _LOGGER.debug(
-            "Cost optimization: price=%.2f, low_threshold=%.2f, high_threshold=%.2f, action=%s",
-            current_price,
-            low_threshold,
-            high_threshold,
-            data.next_action,
-        )
+            _LOGGER.info("Decision: IDLE (price in moderate range or battery constraints not met)")
 
     def _optimize_maximize_self_consumption(self, data: EnergyOptimizerData) -> None:
         """Optimize to maximize self-consumption of solar energy."""
