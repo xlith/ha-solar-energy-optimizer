@@ -43,6 +43,7 @@ class StrategySelect(CoordinatorEntity[EnergyOptimizerCoordinator], SelectEntity
         """Initialize the select."""
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_{ENTITY_CURRENT_STRATEGY}"
+        self._attr_name = "Strategy"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry.entry_id)},
         }

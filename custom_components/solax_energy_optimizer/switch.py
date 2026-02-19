@@ -50,6 +50,7 @@ class AutomationEnabledSwitch(
         """Initialize the switch."""
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_{ENTITY_AUTOMATION_ENABLED}"
+        self._attr_name = "Automation enabled"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry.entry_id)},
         }
@@ -87,6 +88,7 @@ class ManualOverrideSwitch(
         """Initialize the switch."""
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_{ENTITY_MANUAL_OVERRIDE}"
+        self._attr_name = "Manual override"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry.entry_id)},
         }
@@ -122,6 +124,7 @@ class DryRunSwitch(CoordinatorEntity[EnergyOptimizerCoordinator], SwitchEntity):
         """Initialize the switch."""
         super().__init__(coordinator)
         self._attr_unique_id = f"{entry.entry_id}_{ENTITY_DRY_RUN}"
+        self._attr_name = "Dry run mode"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry.entry_id)},
         }
