@@ -110,6 +110,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
 
     async def _async_update_data(self) -> EnergyOptimizerData:
         """Fetch data from dependencies and run optimization."""
+        _LOGGER.debug("Starting data update cycle")
         try:
             data = EnergyOptimizerData()
 
@@ -181,6 +182,12 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             return data
 
         except Exception as err:
+            _LOGGER.error(
+                "Error in _async_update_data: %s (type: %s)",
+                str(err),
+                type(err).__name__,
+                exc_info=True,
+            )
             raise UpdateFailed(f"Error fetching data: {err}") from err
 
     def _run_optimization(self, data: EnergyOptimizerData) -> None:
