@@ -156,7 +156,14 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
 
                 if frank_state.attributes:
                     # Extract price data from attributes
-                    data.prices_today = frank_state.attributes.get("prices", [])
+                    prices_raw = frank_state.attributes.get("prices", [])
+                    _LOGGER.debug(
+                        "Frank Energie prices attribute type: %s, length: %s, sample: %s",
+                        type(prices_raw).__name__,
+                        len(prices_raw) if isinstance(prices_raw, list) else "N/A",
+                        prices_raw[:2] if isinstance(prices_raw, list) and len(prices_raw) >= 2 else prices_raw
+                    )
+                    data.prices_today = prices_raw
 
             # Run optimization if automation is enabled and not in manual override
             if self._automation_enabled and not self._manual_override:
@@ -208,8 +215,23 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             data.next_action = ACTION_IDLE
             return
 
+        # Debug log the price data structure
+        _LOGGER.debug("Price data structure: %s", data.prices_today[:2] if len(data.prices_today) >= 2 else data.prices_today)
+
         current_hour = datetime.now().hour
-        prices_ahead = [p for p in data.prices_today if self._parse_time(p.get("from", "")).hour >= current_hour]
+        prices_ahead = []
+        for p in data.prices_today:
+            try:
+                if not isinstance(p, dict):
+                    _LOGGER.warning("Expected dict in prices_today, got %s: %s", type(p).__name__, p)
+                    continue
+                time_from = p.get("from", "")
+                parsed_time = self._parse_time(time_from)
+                if parsed_time.hour >= current_hour:
+                    prices_ahead.append(p)
+            except Exception as e:
+                _LOGGER.error("Error processing price entry %s: %s", p, str(e), exc_info=True)
+                continue
 
         if not prices_ahead:
             data.next_action = ACTION_IDLE
@@ -345,6 +367,11 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
     def _parse_time(self, time_str: str) -> datetime:
         """Parse time string to datetime."""
         try:
+            # Ensure time_str is actually a string
+            if not isinstance(time_str, str):
+                _LOGGER.warning("Expected string for time parsing, got %s: %s", type(time_str).__name__, time_str)
+                return datetime.now()
             return datetime.fromisoformat(time_str.replace("Z", "+00:00"))
-        except (ValueError, AttributeError):
+        except (ValueError, AttributeError, TypeError) as e:
+            _LOGGER.warning("Could not parse time string '%s': %s", time_str, str(e))
             return datetime.now()
