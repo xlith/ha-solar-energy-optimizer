@@ -165,6 +165,14 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
                     )
                     data.prices_today = prices_raw
 
+            # Log current state before optimization
+            _LOGGER.debug(
+                "Optimization state - Automation: %s, Manual override: %s, Dry run: %s",
+                self._automation_enabled,
+                self._manual_override,
+                self._dry_run_mode,
+            )
+
             # Run optimization if automation is enabled and not in manual override
             if self._automation_enabled and not self._manual_override:
                 self._run_optimization(data)
@@ -183,6 +191,12 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
                         data.next_action,
                         data.target_soc,
                     )
+            else:
+                _LOGGER.debug(
+                    "Optimization skipped - Automation enabled: %s, Manual override: %s",
+                    self._automation_enabled,
+                    self._manual_override,
+                )
                     # TODO: Implement actual inverter control
                     # await self._execute_action(data.next_action, data.target_soc)
 
@@ -199,14 +213,24 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
 
     def _run_optimization(self, data: EnergyOptimizerData) -> None:
         """Run optimization algorithm based on current strategy."""
+        _LOGGER.info("Running optimization with strategy: %s", self._current_strategy)
+
         if self._current_strategy == STRATEGY_MINIMIZE_COST:
             self._optimize_minimize_cost(data)
         elif self._current_strategy == STRATEGY_MAXIMIZE_SELF_CONSUMPTION:
             self._optimize_maximize_self_consumption(data)
         elif self._current_strategy == STRATEGY_GRID_INDEPENDENCE:
             self._optimize_grid_independence(data)
+
         elif self._current_strategy == STRATEGY_BALANCED:
             self._optimize_balanced(data)
+
+        _LOGGER.info(
+            "Optimization complete - Action: %s, Target SOC: %s%%, Next action time: %s",
+            data.next_action,
+            data.target_soc,
+            data.next_action_time,
+        )
 
     def _optimize_minimize_cost(self, data: EnergyOptimizerData) -> None:
         """Optimize to minimize energy costs."""
