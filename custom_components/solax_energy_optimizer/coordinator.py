@@ -147,23 +147,34 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
 
             # Get energy prices
             frank_entity = self.config_entry.data[CONF_FRANK_ENERGIE_ENTITY]
+            _LOGGER.debug("Looking for Frank Energie entity: %s", frank_entity)
+
             frank_state = self.hass.states.get(frank_entity)
             if frank_state:
+                _LOGGER.debug("Frank Energie entity found, state: %s", frank_state.state)
+                _LOGGER.debug("Frank Energie attributes keys: %s", list(frank_state.attributes.keys()) if frank_state.attributes else "No attributes")
+
                 try:
                     data.current_price = float(frank_state.state)
-                except (ValueError, TypeError):
-                    _LOGGER.warning("Could not parse current price from %s", frank_entity)
+                    _LOGGER.debug("Current price set to: %s", data.current_price)
+                except (ValueError, TypeError) as e:
+                    _LOGGER.warning("Could not parse current price from %s: %s", frank_entity, str(e))
 
                 if frank_state.attributes:
                     # Extract price data from attributes
                     prices_raw = frank_state.attributes.get("prices", [])
-                    _LOGGER.debug(
-                        "Frank Energie prices attribute type: %s, length: %s, sample: %s",
+                    _LOGGER.info(
+                        "Frank Energie prices - type: %s, count: %s",
                         type(prices_raw).__name__,
                         len(prices_raw) if isinstance(prices_raw, list) else "N/A",
-                        prices_raw[:2] if isinstance(prices_raw, list) and len(prices_raw) >= 2 else prices_raw
                     )
+                    if isinstance(prices_raw, list) and len(prices_raw) > 0:
+                        _LOGGER.debug("Sample price entry: %s", prices_raw[0])
                     data.prices_today = prices_raw
+                else:
+                    _LOGGER.warning("Frank Energie entity has no attributes")
+            else:
+                _LOGGER.error("Frank Energie entity not found: %s", frank_entity)
 
             # Log current state before optimization
             _LOGGER.debug(
