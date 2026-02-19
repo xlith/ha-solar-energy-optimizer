@@ -17,7 +17,7 @@ jobs:
     name: Lint and Format Check
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -49,7 +49,7 @@ jobs:
     name: Validate Python Syntax
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -80,7 +80,7 @@ jobs:
     name: Validate JSON Files
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Validate manifest.json
         run: |
@@ -102,7 +102,7 @@ jobs:
     name: Check Integration Structure
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Check required files
         run: |
