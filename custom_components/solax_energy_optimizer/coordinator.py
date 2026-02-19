@@ -119,8 +119,13 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             if inverter_state:
                 try:
                     data.battery_soc = float(inverter_state.state)
-                except (ValueError, TypeError):
-                    _LOGGER.warning("Could not parse battery SOC from %s", inverter_entity)
+                except (ValueError, TypeError) as e:
+                    _LOGGER.warning(
+                        "Could not parse battery SOC from %s: state='%s', error=%s",
+                        inverter_entity,
+                        inverter_state.state,
+                        e,
+                    )
 
             # Get solar forecast
             solcast_entity = self.config_entry.data[CONF_SOLCAST_ENTITY]
