@@ -49,18 +49,21 @@ SENSORS: tuple[EnergyOptimizerSensorDescription, ...] = (
     EnergyOptimizerSensorDescription(
         key=ENTITY_NEXT_ACTION,
         translation_key="next_action",
+        name="Next action",
         icon="mdi:flash-auto",
         value_fn=lambda data: data.next_action,
     ),
     EnergyOptimizerSensorDescription(
         key=ENTITY_NEXT_ACTION_TIME,
         translation_key="next_action_time",
+        name="Next action time",
         device_class=SensorDeviceClass.TIMESTAMP,
         value_fn=lambda data: data.next_action_time,
     ),
     EnergyOptimizerSensorDescription(
         key=ENTITY_DAILY_COST,
         translation_key="daily_cost",
+        name="Daily cost",
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement=CURRENCY_EURO,
         state_class=SensorStateClass.TOTAL,
@@ -69,6 +72,7 @@ SENSORS: tuple[EnergyOptimizerSensorDescription, ...] = (
     EnergyOptimizerSensorDescription(
         key=ENTITY_DAILY_SAVINGS,
         translation_key="daily_savings",
+        name="Daily savings",
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement=CURRENCY_EURO,
         state_class=SensorStateClass.TOTAL,
@@ -78,6 +82,7 @@ SENSORS: tuple[EnergyOptimizerSensorDescription, ...] = (
     EnergyOptimizerSensorDescription(
         key=ENTITY_MONTHLY_COST,
         translation_key="monthly_cost",
+        name="Monthly cost",
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement=CURRENCY_EURO,
         state_class=SensorStateClass.TOTAL,
@@ -86,6 +91,7 @@ SENSORS: tuple[EnergyOptimizerSensorDescription, ...] = (
     EnergyOptimizerSensorDescription(
         key=ENTITY_MONTHLY_SAVINGS,
         translation_key="monthly_savings",
+        name="Monthly savings",
         device_class=SensorDeviceClass.MONETARY,
         native_unit_of_measurement=CURRENCY_EURO,
         state_class=SensorStateClass.TOTAL,
