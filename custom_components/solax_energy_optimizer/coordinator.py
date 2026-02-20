@@ -139,7 +139,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             if solcast_state is None:
                 _LOGGER.info("[solcast] %s: not yet in HA state machine", solcast_entity)
             elif solcast_state.attributes:
-                forecasts = solcast_state.attributes.get("forecasts", [])
+                forecasts = solcast_state.attributes.get("detailedForecast", [])
                 data.solar_forecast = forecasts
                 _LOGGER.info("[solcast] %s: state=%s, %d forecast entries", solcast_entity, solcast_state.state, len(forecasts))
             else:
@@ -196,6 +196,20 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
     def _run_optimization(self, data: EnergyOptimizerData) -> None:
         """Run optimization algorithm based on current strategy."""
         _LOGGER.info("[optimizer] running strategy: %s", self._current_strategy)
+
+        # Safety: always charge if SOC is below minimum, regardless of strategy or price
+        min_soc = float(self.config_entry.data.get(CONF_MIN_SOC, 20))
+        if data.battery_soc is not None and data.battery_soc < min_soc:
+            data.next_action = ACTION_CHARGE
+            data.target_soc = min_soc
+            data.next_action_time = datetime.now()
+            _LOGGER.info(
+                "[optimizer] safety override: SOC=%.1f%% < min=%.0f%%, forcing CHARGE to %.0f%%",
+                data.battery_soc,
+                min_soc,
+                min_soc,
+            )
+            return
 
         if self._current_strategy == STRATEGY_MINIMIZE_COST:
             self._optimize_minimize_cost(data)
@@ -298,7 +312,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
 
         next_solar_period = None
         for forecast in data.solar_forecast:
-            forecast_time = self._parse_time(forecast.get("period_end", ""))
+            forecast_time = self._parse_time(forecast.get("period_start", ""))
             if forecast_time > current_time and forecast.get("pv_estimate", 0) > 1.0:
                 next_solar_period = forecast
                 break
@@ -306,7 +320,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         if next_solar_period:
             pv = next_solar_period.get("pv_estimate", 0)
             _LOGGER.info("[maximize_self_consumption] next solar period: pv_estimate=%.2f kW at %s",
-                         pv, next_solar_period.get("period_end"))
+                         pv, next_solar_period.get("period_start"))
             if data.battery_soc is not None and data.battery_soc > max_soc - 20:
                 data.next_action = ACTION_DISCHARGE
                 data.target_soc = max_soc - 20
