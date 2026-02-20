@@ -24,7 +24,7 @@ The project includes automated workflows for:
 
 **Status Badge**:
 ```markdown
-[![HACS Validation](https://github.com/xlith/solax-energy-optimizer/actions/workflows/hacs-validation.yml/badge.svg)](https://github.com/xlith/solax-energy-optimizer/actions/workflows/hacs-validation.yml)
+[![HACS Validation](https://github.com/xlith/ha-solar-energy-optimizer/actions/workflows/hacs-validation.yml/badge.svg)](https://github.com/xlith/ha-solar-energy-optimizer/actions/workflows/hacs-validation.yml)
 ```
 
 ### 2. Code Quality ([`.github/workflows/quality.yml`](.github/workflows/quality.yml))
@@ -48,7 +48,7 @@ The project includes automated workflows for:
 
 **Status Badge**:
 ```markdown
-[![Code Quality](https://github.com/xlith/solax-energy-optimizer/actions/workflows/quality.yml/badge.svg)](https://github.com/xlith/solax-energy-optimizer/actions/workflows/quality.yml)
+[![Code Quality](https://github.com/xlith/ha-solar-energy-optimizer/actions/workflows/quality.yml/badge.svg)](https://github.com/xlith/ha-solar-energy-optimizer/actions/workflows/quality.yml)
 ```
 
 ### 3. Release ([`.github/workflows/release.yml`](.github/workflows/release.yml))
@@ -136,12 +136,12 @@ Includes sections for:
 Add these badges to your README:
 
 ```markdown
-[![GitHub Release](https://img.shields.io/github/v/release/xlith/solax-energy-optimizer)](https://github.com/xlith/solax-energy-optimizer/releases)
-[![GitHub Activity](https://img.shields.io/github/commit-activity/y/xlith/solax-energy-optimizer)](https://github.com/xlith/solax-energy-optimizer/commits/main)
-[![License](https://img.shields.io/github/license/xlith/solax-energy-optimizer)](LICENSE)
+[![GitHub Release](https://img.shields.io/github/v/release/xlith/ha-solar-energy-optimizer)](https://github.com/xlith/ha-solar-energy-optimizer/releases)
+[![GitHub Activity](https://img.shields.io/github/commit-activity/y/xlith/ha-solar-energy-optimizer)](https://github.com/xlith/ha-solar-energy-optimizer/commits/main)
+[![License](https://img.shields.io/github/license/xlith/ha-solar-energy-optimizer)](LICENSE)
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
-[![HACS Validation](https://github.com/xlith/solax-energy-optimizer/actions/workflows/hacs-validation.yml/badge.svg)](https://github.com/xlith/solax-energy-optimizer/actions/workflows/hacs-validation.yml)
-[![Code Quality](https://github.com/xlith/solax-energy-optimizer/actions/workflows/quality.yml/badge.svg)](https://github.com/xlith/solax-energy-optimizer/actions/workflows/quality.yml)
+[![HACS Validation](https://github.com/xlith/ha-solar-energy-optimizer/actions/workflows/hacs-validation.yml/badge.svg)](https://github.com/xlith/ha-solar-energy-optimizer/actions/workflows/hacs-validation.yml)
+[![Code Quality](https://github.com/xlith/ha-solar-energy-optimizer/actions/workflows/quality.yml/badge.svg)](https://github.com/xlith/ha-solar-energy-optimizer/actions/workflows/quality.yml)
 ```
 
 ## Workflow Status

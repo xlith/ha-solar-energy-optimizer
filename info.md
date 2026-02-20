@@ -33,4 +33,4 @@ Automate your home energy management by optimizing battery charge/discharge cycl
 - Manual override capability
 - Service for on-demand optimization
 
-For detailed documentation, see the [README](https://github.com/xlith/solax-energy-optimizer).
+For detailed documentation, see the [README](https://github.com/xlith/ha-solar-energy-optimizer).

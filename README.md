@@ -1,11 +1,11 @@
 # Solar Energy Optimizer
 
-[![GitHub Release](https://img.shields.io/github/v/release/xlith/solax-energy-optimizer)](https://github.com/xlith/solax-energy-optimizer/releases)
-[![GitHub Activity](https://img.shields.io/github/commit-activity/y/xlith/solax-energy-optimizer)](https://github.com/xlith/solax-energy-optimizer/commits/main)
-[![License](https://img.shields.io/github/license/xlith/solax-energy-optimizer)](LICENSE)
+[![GitHub Release](https://img.shields.io/github/v/release/xlith/ha-solar-energy-optimizer)](https://github.com/xlith/ha-solar-energy-optimizer/releases)
+[![GitHub Activity](https://img.shields.io/github/commit-activity/y/xlith/ha-solar-energy-optimizer)](https://github.com/xlith/ha-solar-energy-optimizer/commits/main)
+[![License](https://img.shields.io/github/license/xlith/ha-solar-energy-optimizer)](LICENSE)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/hacs/integration)
-[![HACS Validation](https://github.com/xlith/solax-energy-optimizer/actions/workflows/hacs-validation.yml/badge.svg)](https://github.com/xlith/solax-energy-optimizer/actions/workflows/hacs-validation.yml)
-[![Code Quality](https://github.com/xlith/solax-energy-optimizer/actions/workflows/quality.yml/badge.svg)](https://github.com/xlith/solax-energy-optimizer/actions/workflows/quality.yml)
+[![HACS Validation](https://github.com/xlith/ha-solar-energy-optimizer/actions/workflows/hacs-validation.yml/badge.svg)](https://github.com/xlith/ha-solar-energy-optimizer/actions/workflows/hacs-validation.yml)
+[![Code Quality](https://github.com/xlith/ha-solar-energy-optimizer/actions/workflows/quality.yml/badge.svg)](https://github.com/xlith/ha-solar-energy-optimizer/actions/workflows/quality.yml)
 
 A Home Assistant custom integration that optimizes energy cycles between grid, battery, and solar panels based on dynamic energy prices, solar production forecasts, and configurable optimization strategies.
 
@@ -61,7 +61,7 @@ This integration requires the following Home Assistant integrations to be alread
 
 1. Add this repository as a custom repository in HACS:
    - Go to HACS → Integrations → ⋮ → Custom repositories
-   - Add: `https://github.com/xlith/solax-energy-optimizer`
+   - Add: `https://github.com/xlith/ha-solar-energy-optimizer`
    - Category: Integration
 
 2. Click "Install" on the Solar Energy Optimizer card
@@ -221,7 +221,7 @@ The integration:
 ## Support
 
 For issues, feature requests, or questions:
-- Open an issue on [GitHub](https://github.com/xlith/solax-energy-optimizer/issues)
+- Open an issue on [GitHub](https://github.com/xlith/ha-solar-energy-optimizer/issues)
 
 ## Contributing
 

@@ -43,7 +43,7 @@ This provides:
 3. Click the three dots menu (⋮) in the top right
 4. Select "Custom repositories"
 5. Add this repository:
-   - **URL**: `https://github.com/xlith/solax-energy-optimizer`
+   - **URL**: `https://github.com/xlith/ha-solar-energy-optimizer`
    - **Category**: Integration
 6. Click "Add"
 7. Find "Solar Energy Optimizer" in the integrations list
@@ -246,7 +246,7 @@ If you encounter issues:
 1. Check the logs for error messages
 2. Review the [README.md](README.md) for detailed information
 3. See [DEVELOPMENT.md](DEVELOPMENT.md) for technical details
-4. Open an issue on [GitHub](https://github.com/xlith/solax-energy-optimizer/issues)
+4. Open an issue on [GitHub](https://github.com/xlith/ha-solar-energy-optimizer/issues)
 
 ## Uninstalling
 

@@ -28,7 +28,7 @@ The Solar Energy Optimizer is a Home Assistant custom integration that optimizes
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                    SOLAX ENERGY OPTIMIZER                            │
+│                    SOLAR ENERGY OPTIMIZER                            │
 │                                                                       │
 │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐          │
 │  │ Config Flow  │───▶│   __init__   │───▶│  Coordinator │          │

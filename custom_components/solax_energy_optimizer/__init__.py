@@ -27,7 +27,7 @@ PLATFORMS: list[str] = [
 async def async_setup_entry(
     hass: HomeAssistant, entry: EnergyOptimizerConfigEntry
 ) -> bool:
-    """Set up Energy Optimizer from a config entry."""
+    """Set up Solar Energy Optimizer from a config entry."""
     _LOGGER.info("Setting up Solar Energy Optimizer (entry_id=%s)", entry.entry_id)
     _LOGGER.info(
         "Configured entities - inverter: %s [%s], forecast: %s [%s], prices: %s [%s]",

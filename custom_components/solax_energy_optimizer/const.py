@@ -1,4 +1,4 @@
-"""Constants for the Energy Optimizer integration."""
+"""Constants for the Solar Energy Optimizer integration."""
 from datetime import timedelta
 from typing import Final
 

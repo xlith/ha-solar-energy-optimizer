@@ -1,5 +1,5 @@
 [project]
-name = "solax-energy-optimizer"
+name = "solar-energy-optimizer"
 version = "0.0.4"
 requires-python = ">=3.12"
 dependencies = [

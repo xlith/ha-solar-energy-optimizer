@@ -6,7 +6,7 @@ Your Solar Energy Optimizer integration is now live on GitHub!
 
 ### 📦 Repository Details
 
-- **Repository**: https://github.com/xlith/solax-energy-optimizer
+- **Repository**: https://github.com/xlith/ha-solar-energy-optimizer
 - **Owner**: xlith
 - **Visibility**: Public
 - **Default Branch**: master
@@ -37,17 +37,17 @@ The repository is tagged with:
 ### 🔗 Quick Links
 
 #### Repository
-- **Home**: https://github.com/xlith/solax-energy-optimizer
-- **Code**: https://github.com/xlith/solax-energy-optimizer/tree/master
-- **Actions**: https://github.com/xlith/solax-energy-optimizer/actions
-- **Issues**: https://github.com/xlith/solax-energy-optimizer/issues
-- **Releases**: https://github.com/xlith/solax-energy-optimizer/releases
+- **Home**: https://github.com/xlith/ha-solar-energy-optimizer
+- **Code**: https://github.com/xlith/ha-solar-energy-optimizer/tree/master
+- **Actions**: https://github.com/xlith/ha-solar-energy-optimizer/actions
+- **Issues**: https://github.com/xlith/ha-solar-energy-optimizer/issues
+- **Releases**: https://github.com/xlith/ha-solar-energy-optimizer/releases
 
 #### Documentation
-- **README**: https://github.com/xlith/solax-energy-optimizer#readme
-- **Installation Guide**: https://github.com/xlith/solax-energy-optimizer/blob/master/INSTALLATION.md
-- **Development Guide**: https://github.com/xlith/solax-energy-optimizer/blob/master/DEVELOPMENT.md
-- **Contributing**: https://github.com/xlith/solax-energy-optimizer/blob/master/CONTRIBUTING.md
+- **README**: https://github.com/xlith/ha-solar-energy-optimizer#readme
+- **Installation Guide**: https://github.com/xlith/ha-solar-energy-optimizer/blob/master/INSTALLATION.md
+- **Development Guide**: https://github.com/xlith/ha-solar-energy-optimizer/blob/master/DEVELOPMENT.md
+- **Contributing**: https://github.com/xlith/ha-solar-energy-optimizer/blob/master/CONTRIBUTING.md
 
 ### 🚀 Next Steps
 
@@ -98,14 +98,14 @@ Once you have a stable release:
 
 1. Go to [HACS Integration Submission](https://github.com/hacs/default/issues/new?template=integration.yml)
 2. Fill in the form with:
-   - Repository: `xlith/solax-energy-optimizer`
+   - Repository: `xlith/ha-solar-energy-optimizer`
    - Category: Integration
    - Description: Copy from README
 3. Wait for HACS team review and approval
 
 Or users can add it as a custom repository:
 - HACS → Integrations → ⋮ → Custom repositories
-- URL: `https://github.com/xlith/solax-energy-optimizer`
+- URL: `https://github.com/xlith/ha-solar-energy-optimizer`
 - Category: Integration
 
 ### 📊 Repository Statistics
@@ -138,8 +138,8 @@ Examples/              # 1 automation file
 #### Clone Repository
 ```bash
 # Clone your repository
-git clone https://github.com/xlith/solax-energy-optimizer.git
-cd solax-energy-optimizer
+git clone https://github.com/xlith/ha-solar-energy-optimizer.git
+cd ha-solar-energy-optimizer
 
 # Make changes
 git checkout -b feature/my-feature
@@ -287,7 +287,7 @@ Encourage users to:
 
 ### 📝 Notes
 
-- Repository URL: https://github.com/xlith/solax-energy-optimizer
+- Repository URL: https://github.com/xlith/ha-solar-energy-optimizer
 - Initial commit: feat: initial release of Solar Energy Optimizer v1.0.0
 - Default branch: master
 - License: MIT

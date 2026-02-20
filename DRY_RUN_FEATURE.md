@@ -169,7 +169,7 @@ automation:
     action:
       - service: notify.mobile_app
         data:
-          title: "⚠️ Energy Optimizer Alert"
+          title: "⚠️ Solar Energy Optimizer Alert"
           message: "Dry run mode has been disabled. Battery control is now active!"
           data:
             priority: high

@@ -11,7 +11,7 @@ Be respectful and constructive in all interactions. We want to maintain a welcom
 ### Reporting Bugs
 
 Before creating a bug report:
-1. Check the [existing issues](https://github.com/xlith/solax-energy-optimizer/issues) to avoid duplicates
+1. Check the [existing issues](https://github.com/xlith/ha-solar-energy-optimizer/issues) to avoid duplicates
 2. Verify you're using the latest version
 3. Check the logs for error messages
 4. Try to reproduce the issue in dry run mode
@@ -54,8 +54,8 @@ Feature requests are welcome! When suggesting a feature:
 
 1. Clone your fork:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/solax-energy-optimizer.git
-   cd solax-energy-optimizer
+   git clone https://github.com/YOUR_USERNAME/ha-solar-energy-optimizer.git
+   cd ha-solar-energy-optimizer
    ```
 
 2. Create a branch:
@@ -206,7 +206,7 @@ Maintainers follow this process for releases:
 
 If you have questions:
 1. Check the [documentation](README.md)
-2. Look for [existing issues](https://github.com/xlith/solax-energy-optimizer/issues)
+2. Look for [existing issues](https://github.com/xlith/ha-solar-energy-optimizer/issues)
 3. Ask in [Home Assistant Community](https://community.home-assistant.io/)
 4. Open a new issue
 
