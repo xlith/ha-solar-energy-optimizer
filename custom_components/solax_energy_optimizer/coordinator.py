@@ -6,6 +6,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import dt as dt_util
 
 if TYPE_CHECKING:
     from homeassistant.config_entries import ConfigEntry
@@ -202,7 +203,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         if data.battery_soc is not None and data.battery_soc < min_soc:
             data.next_action = ACTION_CHARGE
             data.target_soc = min_soc
-            data.next_action_time = datetime.now()
+            data.next_action_time = dt_util.now()
             _LOGGER.info(
                 "[optimizer] safety override: SOC=%.1f%% < min=%.0f%%, forcing CHARGE to %.0f%%",
                 data.battery_soc,
@@ -287,13 +288,13 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         if current_price <= low_threshold and data.battery_soc is not None and data.battery_soc < max_soc:
             data.next_action = ACTION_CHARGE
             data.target_soc = max_soc
-            data.next_action_time = datetime.now()
+            data.next_action_time = dt_util.now()
             _LOGGER.info("[minimize_cost] decision=CHARGE (price %.4f <= low_threshold %.4f, soc %.1f%% < max %.0f%%)",
                          current_price, low_threshold, data.battery_soc, max_soc)
         elif current_price >= high_threshold and data.battery_soc is not None and data.battery_soc > min_soc:
             data.next_action = ACTION_DISCHARGE
             data.target_soc = min_soc
-            data.next_action_time = datetime.now()
+            data.next_action_time = dt_util.now()
             _LOGGER.info("[minimize_cost] decision=DISCHARGE (price %.4f >= high_threshold %.4f, soc %.1f%% > min %.0f%%)",
                          current_price, high_threshold, data.battery_soc, min_soc)
         else:
