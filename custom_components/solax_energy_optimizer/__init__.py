@@ -32,10 +32,19 @@ async def async_setup_entry(
     """Set up Solax Energy Optimizer from a config entry."""
     from .coordinator import EnergyOptimizerCoordinator
 
-    coordinator = EnergyOptimizerCoordinator(hass, entry)
+    _LOGGER.info("Setting up Solax Energy Optimizer (entry_id=%s)", entry.entry_id)
+    _LOGGER.info(
+        "Configured entities - inverter: %s, solcast: %s, frank_energie: %s",
+        entry.data.get("solax_inverter_entity"),
+        entry.data.get("solcast_entity"),
+        entry.data.get("frank_energie_entity"),
+    )
 
-    # Fetch initial data so we have data when entities subscribe
+    coordinator = EnergyOptimizerCoordinator(hass, entry)
+    _LOGGER.info("Coordinator created, fetching initial data")
+
     await coordinator.async_config_entry_first_refresh()
+    _LOGGER.info("Initial data fetch complete")
 
     entry.runtime_data = coordinator
 
@@ -53,10 +62,12 @@ async def async_setup_entry(
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    _LOGGER.info("Platforms set up: %s", PLATFORMS)
 
     # Register services
     async def handle_trigger_optimization(call: ServiceCall) -> None:
         """Handle trigger optimization service call."""
+        _LOGGER.info("Manual optimization triggered via service call")
         await coordinator.async_request_refresh()
 
     hass.services.async_register(
@@ -65,6 +76,7 @@ async def async_setup_entry(
         handle_trigger_optimization,
     )
 
+    _LOGGER.info("Solax Energy Optimizer setup complete")
     return True
 
 
@@ -72,4 +84,7 @@ async def async_unload_entry(
     hass: HomeAssistant, entry: EnergyOptimizerConfigEntry
 ) -> bool:
     """Unload a config entry."""
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    _LOGGER.info("Unloading Solax Energy Optimizer (entry_id=%s)", entry.entry_id)
+    result = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    _LOGGER.info("Unload result: %s", result)
+    return result
