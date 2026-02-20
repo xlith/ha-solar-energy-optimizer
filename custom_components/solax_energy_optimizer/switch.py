@@ -63,12 +63,12 @@ class AutomationEnabledSwitch(
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on automation."""
         self.coordinator.set_automation_enabled(True)
-        await self.coordinator.async_request_refresh()
+        self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off automation."""
         self.coordinator.set_automation_enabled(False)
-        await self.coordinator.async_request_refresh()
+        self.async_write_ha_state()
 
 
 class ManualOverrideSwitch(
@@ -101,12 +101,12 @@ class ManualOverrideSwitch(
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on manual override."""
         self.coordinator.set_manual_override(True)
-        await self.coordinator.async_request_refresh()
+        self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off manual override."""
         self.coordinator.set_manual_override(False)
-        await self.coordinator.async_request_refresh()
+        self.async_write_ha_state()
 
 
 class DryRunSwitch(CoordinatorEntity[EnergyOptimizerCoordinator], SwitchEntity):
@@ -137,9 +137,9 @@ class DryRunSwitch(CoordinatorEntity[EnergyOptimizerCoordinator], SwitchEntity):
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn on dry run mode."""
         self.coordinator.set_dry_run_mode(True)
-        await self.coordinator.async_request_refresh()
+        self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn off dry run mode."""
         self.coordinator.set_dry_run_mode(False)
-        await self.coordinator.async_request_refresh()
+        self.async_write_ha_state()
