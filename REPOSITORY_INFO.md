@@ -2,7 +2,7 @@
 
 ## 🎉 Repository Successfully Created!
 
-Your Solax Energy Optimizer integration is now live on GitHub!
+Your Solar Energy Optimizer integration is now live on GitHub!
 
 ### 📦 Repository Details
 
@@ -288,7 +288,7 @@ Encourage users to:
 ### 📝 Notes
 
 - Repository URL: https://github.com/xlith/solax-energy-optimizer
-- Initial commit: feat: initial release of Solax Energy Optimizer v1.0.0
+- Initial commit: feat: initial release of Solar Energy Optimizer v1.0.0
 - Default branch: master
 - License: MIT
 - Language: Python

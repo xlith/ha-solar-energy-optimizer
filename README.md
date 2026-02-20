@@ -1,4 +1,4 @@
-# Solax Energy Optimizer
+# Solar Energy Optimizer
 
 [![GitHub Release](https://img.shields.io/github/v/release/xlith/solax-energy-optimizer)](https://github.com/xlith/solax-energy-optimizer/releases)
 [![GitHub Activity](https://img.shields.io/github/commit-activity/y/xlith/solax-energy-optimizer)](https://github.com/xlith/solax-energy-optimizer/commits/main)
@@ -64,7 +64,7 @@ This integration requires the following Home Assistant integrations to be alread
    - Add: `https://github.com/xlith/solax-energy-optimizer`
    - Category: Integration
 
-2. Click "Install" on the Solax Energy Optimizer card
+2. Click "Install" on the Solar Energy Optimizer card
 
 3. Restart Home Assistant
 
@@ -80,7 +80,7 @@ This integration requires the following Home Assistant integrations to be alread
 
 2. Click **+ Add Integration**
 
-3. Search for "Solax Energy Optimizer"
+3. Search for "Solar Energy Optimizer"
 
 4. Fill in the configuration form:
    - **Solax Inverter Battery SOC Entity**: Select your battery state of charge sensor

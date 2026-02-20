@@ -81,7 +81,7 @@ The integration is ready for testing. To test:
 
 3. Add the integration via UI:
    - Settings → Devices & Services → Add Integration
-   - Search for "Solax Energy Optimizer"
+   - Search for "Solar Energy Optimizer"
 
 4. Configure with your entity IDs
 

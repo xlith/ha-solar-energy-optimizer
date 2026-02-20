@@ -1,6 +1,6 @@
-# Contributing to Solax Energy Optimizer
+# Contributing to Solar Energy Optimizer
 
-Thank you for considering contributing to Solax Energy Optimizer! This document provides guidelines for contributing to the project.
+Thank you for considering contributing to Solar Energy Optimizer! This document provides guidelines for contributing to the project.
 
 ## Code of Conduct
 

@@ -1,4 +1,4 @@
-# Solax Energy Optimizer
+# Solar Energy Optimizer
 
 ## ⚠️ DO NOT USE - Under Development
 

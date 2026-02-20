@@ -1,4 +1,4 @@
-"""Select platform for Solax Energy Optimizer."""
+"""Select platform for Solar Energy Optimizer."""
 from __future__ import annotations
 
 from homeassistant.components.select import SelectEntity

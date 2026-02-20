@@ -1,10 +1,10 @@
 {
   "domain": "solax_energy_optimizer",
-  "name": "Solax Energy Optimizer",
+  "name": "Solar Energy Optimizer",
   "codeowners": ["@xlith"],
   "config_flow": true,
   "dependencies": [],
-  "after_dependencies": ["frank_energie", "solax_modbus", "solcast_solar"],
+  "after_dependencies": [],
   "documentation": "https://github.com/xlith/solax-energy-optimizer",
   "integration_type": "service",
   "iot_class": "calculated",

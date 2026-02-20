@@ -2,28 +2,74 @@
   "config": {
     "step": {
       "user": {
-        "title": "Configure Solax Energy Optimizer",
-        "description": "Set up your energy optimization system by connecting to your existing integrations.",
+        "title": "Inverter / Battery Source",
+        "description": "Select the inverter type and the entity that reports your battery's state of charge.",
         "data": {
-          "solax_inverter_entity": "Solax Inverter Battery SOC Entity",
-          "solcast_entity": "Solcast Solar Forecast Entity",
-          "frank_energie_entity": "Frank Energie Price Entity",
+          "inverter_type": "Inverter Type",
+          "inverter_entity": "Battery SOC Entity",
+          "inverter_soc_attribute": "SOC Attribute Name"
+        },
+        "data_description": {
+          "inverter_type": "Choose your inverter brand or select Generic if your inverter is not listed",
+          "inverter_entity": "The sensor entity that provides the battery state of charge (0–100 %)",
+          "inverter_soc_attribute": "Only required for Generic (attribute): the attribute name on the entity that contains the SOC value"
+        }
+      },
+      "forecast": {
+        "title": "Solar Forecast Source",
+        "description": "Select the solar forecast provider and its entity.",
+        "data": {
+          "forecast_type": "Forecast Provider",
+          "forecast_entity": "Solar Forecast Entity",
+          "forecast_attribute": "Forecast List Attribute Name",
+          "forecast_period_start_field": "Period Start Field Name",
+          "forecast_pv_estimate_field": "PV Estimate Field Name",
+          "forecast_today_from_state": "Today Total Comes From Entity State"
+        },
+        "data_description": {
+          "forecast_type": "Choose your solar forecast provider or Generic for any other integration",
+          "forecast_entity": "The sensor entity that provides solar production forecasts",
+          "forecast_attribute": "Name of the entity attribute that holds the forecast list (e.g. forecasts)",
+          "forecast_period_start_field": "Field name in each forecast item for the period start datetime (e.g. period_start)",
+          "forecast_pv_estimate_field": "Field name in each forecast item for the power estimate in kW (e.g. pv_estimate)",
+          "forecast_today_from_state": "When enabled, today's total kWh is read from the entity state; otherwise it is summed from the forecast list"
+        }
+      },
+      "prices": {
+        "title": "Electricity Price Source",
+        "description": "Select the electricity price provider and its entity.",
+        "data": {
+          "prices_type": "Price Provider",
+          "prices_entity": "Electricity Price Entity",
+          "prices_attribute": "Prices List Attribute Name",
+          "prices_period_start_field": "Period Start Field Name",
+          "prices_price_field": "Price Field Name"
+        },
+        "data_description": {
+          "prices_type": "Choose your electricity price provider or Generic for any other integration",
+          "prices_entity": "The sensor entity that provides current and upcoming electricity prices",
+          "prices_attribute": "Name of the entity attribute that holds the price list (e.g. prices)",
+          "prices_period_start_field": "Field name in each price item for the period start datetime (e.g. from)",
+          "prices_price_field": "Field name in each price item for the price value (e.g. price)"
+        }
+      },
+      "battery": {
+        "title": "Battery Specifications",
+        "description": "Enter the hardware parameters for your battery system.",
+        "data": {
           "battery_capacity": "Battery Capacity",
           "max_charge_rate": "Maximum Charge Rate",
           "max_discharge_rate": "Maximum Discharge Rate"
         },
         "data_description": {
-          "solax_inverter_entity": "Select the sensor that reports your battery's state of charge (SOC)",
-          "solcast_entity": "Select the Solcast sensor that provides solar production forecasts",
-          "frank_energie_entity": "Select the Frank Energie sensor that provides current electricity prices",
-          "battery_capacity": "Total capacity of your battery in kWh",
+          "battery_capacity": "Total usable capacity of your battery in kWh",
           "max_charge_rate": "Maximum rate at which your battery can charge in kW",
           "max_discharge_rate": "Maximum rate at which your battery can discharge in kW"
         }
       }
     },
     "error": {
-      "entity_not_found": "The selected entity could not be found. Please ensure all integrations are properly configured."
+      "entity_not_found": "The selected entity could not be found. Please check that the integration providing this entity is installed and running."
     },
     "abort": {
       "already_configured": "This configuration is already set up."

@@ -1,14 +1,51 @@
-"""Constants for the Solax Energy Optimizer integration."""
+"""Constants for the Energy Optimizer integration."""
 from datetime import timedelta
 from typing import Final
 
 DOMAIN: Final = "solax_energy_optimizer"
 
-# Configuration keys
+# Configuration keys (v2 — generic, provider-agnostic)
+CONF_INVERTER_ENTITY: Final = "inverter_entity"
+CONF_FORECAST_ENTITY: Final = "forecast_entity"
+CONF_PRICES_ENTITY: Final = "prices_entity"
+
+CONF_INVERTER_TYPE: Final = "inverter_type"
+CONF_FORECAST_TYPE: Final = "forecast_type"
+CONF_PRICES_TYPE: Final = "prices_type"
+
+# Inverter type options
+INVERTER_TYPE_SOLAX_MODBUS: Final = "solax_modbus"
+INVERTER_TYPE_GENERIC_STATE: Final = "generic_state"
+INVERTER_TYPE_GENERIC_ATTRIBUTE: Final = "generic_attribute"
+
+# Solar forecast type options
+FORECAST_TYPE_SOLCAST: Final = "solcast"
+FORECAST_TYPE_GENERIC: Final = "generic"
+
+# Electricity price type options
+PRICES_TYPE_FRANK_ENERGIE: Final = "frank_energie"
+PRICES_TYPE_NORDPOOL: Final = "nordpool"
+PRICES_TYPE_TIBBER: Final = "tibber"
+PRICES_TYPE_AWATTAR: Final = "awattar"
+PRICES_TYPE_AMBER: Final = "amber"
+PRICES_TYPE_GENERIC: Final = "generic"
+
+# Generic field mapping config keys
+CONF_INVERTER_SOC_ATTRIBUTE: Final = "inverter_soc_attribute"
+CONF_FORECAST_ATTRIBUTE: Final = "forecast_attribute"
+CONF_FORECAST_PERIOD_START_FIELD: Final = "forecast_period_start_field"
+CONF_FORECAST_PV_ESTIMATE_FIELD: Final = "forecast_pv_estimate_field"
+CONF_FORECAST_TODAY_FROM_STATE: Final = "forecast_today_from_state"
+CONF_PRICES_ATTRIBUTE: Final = "prices_attribute"
+CONF_PRICES_PERIOD_START_FIELD: Final = "prices_period_start_field"
+CONF_PRICES_PRICE_FIELD: Final = "prices_price_field"
+
+# Legacy v1 config keys — kept as aliases so migration code can read them
 CONF_SOLAX_INVERTER_ENTITY: Final = "solax_inverter_entity"
 CONF_SOLCAST_ENTITY: Final = "solcast_entity"
 CONF_ELECTRICITY_PRICES_ENTITY: Final = "frank_energie_entity"
-CONF_FRANK_ENERGIE_ENTITY = CONF_ELECTRICITY_PRICES_ENTITY  # backwards compat for existing config entries
+CONF_FRANK_ENERGIE_ENTITY = CONF_ELECTRICITY_PRICES_ENTITY
+
 CONF_BATTERY_CAPACITY: Final = "battery_capacity"
 CONF_MAX_CHARGE_RATE: Final = "max_charge_rate"
 CONF_MAX_DISCHARGE_RATE: Final = "max_discharge_rate"

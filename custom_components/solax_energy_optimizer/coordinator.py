@@ -1,4 +1,4 @@
-"""Data update coordinator for Solax Energy Optimizer."""
+"""Data update coordinator for Solar Energy Optimizer."""
 from __future__ import annotations
 
 from datetime import datetime
@@ -10,15 +10,14 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
 
+from .adapters import build_forecast_adapter, build_inverter_adapter, build_price_adapter
+from .adapters.base import InverterAdapter, PriceAdapter, SolarForecastAdapter
 from .const import (
     ACTION_CHARGE,
     ACTION_DISCHARGE,
     ACTION_IDLE,
-    CONF_ELECTRICITY_PRICES_ENTITY,
     CONF_MAX_SOC,
     CONF_MIN_SOC,
-    CONF_SOLCAST_ENTITY,
-    CONF_SOLAX_INVERTER_ENTITY,
     DEFAULT_MAX_SOC,
     DEFAULT_MIN_SOC,
     DEFAULT_UPDATE_INTERVAL,
@@ -74,6 +73,9 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         self._inverter_update_count: int = 0
         self._min_soc: float = float(entry.data.get(CONF_MIN_SOC, DEFAULT_MIN_SOC))
         self._max_soc: float = float(entry.data.get(CONF_MAX_SOC, DEFAULT_MAX_SOC))
+        self._inverter_adapter: InverterAdapter = build_inverter_adapter(entry.data)
+        self._forecast_adapter: SolarForecastAdapter = build_forecast_adapter(entry.data)
+        self._price_adapter: PriceAdapter = build_price_adapter(entry.data)
 
     @property
     def current_strategy(self) -> str:
@@ -149,79 +151,42 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             data.next_update_time = dt_util.now() + DEFAULT_UPDATE_INTERVAL
 
             # --- Battery SOC ---
-            inverter_entity = self.config_entry.data[CONF_SOLAX_INVERTER_ENTITY]
-            inverter_state = self.hass.states.get(inverter_entity)
-            if inverter_state is None:
-                _LOGGER.info("[battery] %s: not yet in HA state machine", inverter_entity)
-            elif inverter_state.state in ("unavailable", "unknown", None, ""):
-                _LOGGER.info("[battery] %s: state=%s (unavailable/unknown)", inverter_entity, inverter_state.state)
+            data.battery_soc = self._inverter_adapter.get_battery_soc(self.hass)
+            if data.battery_soc is not None:
+                _LOGGER.info("[battery] %s: SOC=%.1f%%", self._inverter_adapter.source_entity_id, data.battery_soc)
             else:
-                try:
-                    data.battery_soc = float(inverter_state.state)
-                    _LOGGER.info("[battery] %s: SOC=%.1f%%", inverter_entity, data.battery_soc)
-                except (ValueError, TypeError) as e:
-                    _LOGGER.error(
-                        "[battery] %s: could not parse state='%s' as float: %s",
-                        inverter_entity,
-                        inverter_state.state,
-                        e,
-                    )
+                _LOGGER.info("[battery] %s: SOC unavailable", self._inverter_adapter.source_entity_id)
 
             # --- Solar forecast ---
-            solcast_entity = self.config_entry.data[CONF_SOLCAST_ENTITY]
-            solcast_state = self.hass.states.get(solcast_entity)
-            if solcast_state is None:
-                _LOGGER.info("[solcast] %s: not yet in HA state machine", solcast_entity)
-            elif solcast_state.attributes:
-                forecasts = solcast_state.attributes.get("detailedForecast", [])
-                data.solar_forecast = forecasts
-                if solcast_state.state not in ("unavailable", "unknown"):
-                    try:
-                        data.solar_forecast_today = float(solcast_state.state)
-                    except (ValueError, TypeError):
-                        pass
-                # Log the next 3 non-zero solar periods for context
-                upcoming = [
-                    f for f in forecasts
-                    if self._parse_datetime(f.get("period_start", "")) > dt_util.now()
-                    and f.get("pv_estimate", 0) > 0
-                ][:3]
-                upcoming_str = ", ".join(
-                    f"{self._parse_datetime(f.get('period_start', '')).strftime('%H:%M')}={f.get('pv_estimate', 0):.2f}kW"
-                    for f in upcoming
-                ) or "none"
-                _LOGGER.info(
-                    "[solcast] %s: today_total=%.3f kWh, %d forecast entries, next non-zero: %s",
-                    solcast_entity,
-                    float(solcast_state.state) if solcast_state.state not in ("unavailable", "unknown") else 0,
-                    len(forecasts),
-                    upcoming_str,
-                )
-            else:
-                _LOGGER.info("[solcast] %s: state=%s, no attributes", solcast_entity, solcast_state.state)
+            data.solar_forecast = self._forecast_adapter.get_forecast(self.hass)
+            data.solar_forecast_today = self._forecast_adapter.get_solar_today(self.hass)
+            # Log the next 3 non-zero solar periods for context
+            upcoming = [
+                f for f in data.solar_forecast
+                if self._parse_datetime(f.get("period_start", "")) > dt_util.now()
+                and f.get("pv_estimate", 0) > 0
+            ][:3]
+            upcoming_str = ", ".join(
+                f"{self._parse_datetime(f.get('period_start', '')).strftime('%H:%M')}={f.get('pv_estimate', 0):.2f}kW"
+                for f in upcoming
+            ) or "none"
+            _LOGGER.info(
+                "[forecast] %s: today_total=%.3f kWh, %d forecast entries, next non-zero: %s",
+                self._forecast_adapter.source_entity_id,
+                data.solar_forecast_today or 0,
+                len(data.solar_forecast),
+                upcoming_str,
+            )
 
             # --- Electricity prices ---
-            prices_entity = self.config_entry.data[CONF_ELECTRICITY_PRICES_ENTITY]
-            prices_state = self.hass.states.get(prices_entity)
-            if prices_state is None:
-                _LOGGER.info("[prices] %s: not yet in HA state machine", prices_entity)
-            else:
-                try:
-                    data.current_price = float(prices_state.state)
-                except (ValueError, TypeError) as e:
-                    _LOGGER.warning("[prices] %s: could not parse state='%s' as float: %s", prices_entity, prices_state.state, e)
-
-                if prices_state.attributes:
-                    price_entries = prices_state.attributes.get("prices", [])
-                    data.prices_today = price_entries if isinstance(price_entries, list) else []
-                    _LOGGER.info(
-                        "[prices] %s: current=€%.4f/kWh, %d price entries loaded",
-                        prices_entity,
-                        data.current_price if data.current_price is not None else 0,
-                        len(data.prices_today),
-                    )
-                else:
-                    _LOGGER.warning("[prices] %s: entity has no attributes", prices_entity)
+            data.prices_today = self._price_adapter.get_prices(self.hass)
+            data.current_price = self._price_adapter.get_current_price(self.hass)
+            _LOGGER.info(
+                "[prices] %s: current=%.4f/kWh, %d price entries loaded",
+                self._price_adapter.source_entity_id,
+                data.current_price if data.current_price is not None else 0,
+                len(data.prices_today),
+            )
 
             # --- Optimization ---
             _LOGGER.info(

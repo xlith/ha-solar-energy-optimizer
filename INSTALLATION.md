@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-Before installing Solax Energy Optimizer, you must have these integrations installed and configured:
+Before installing Solar Energy Optimizer, you must have these integrations installed and configured:
 
 ### 1. Solax Modbus Integration
 **Installation**: [Documentation](https://homeassistant-solax-modbus.readthedocs.io/en/latest/)
@@ -46,7 +46,7 @@ This provides:
    - **URL**: `https://github.com/xlith/solax-energy-optimizer`
    - **Category**: Integration
 6. Click "Add"
-7. Find "Solax Energy Optimizer" in the integrations list
+7. Find "Solar Energy Optimizer" in the integrations list
 8. Click "Download"
 9. Restart Home Assistant
 
@@ -66,7 +66,7 @@ This provides:
 
 1. Go to **Settings** → **Devices & Services**
 2. Click the **+ Add Integration** button
-3. Search for "Solax Energy Optimizer"
+3. Search for "Solar Energy Optimizer"
 4. Click on it to start configuration
 
 ### Step 2: Configure Entities
@@ -253,7 +253,7 @@ If you encounter issues:
 To remove the integration:
 
 1. Go to **Settings** → **Devices & Services**
-2. Find "Solax Energy Optimizer"
+2. Find "Solar Energy Optimizer"
 3. Click the three dots menu (⋮)
 4. Select "Delete"
 5. Confirm deletion

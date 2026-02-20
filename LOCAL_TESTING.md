@@ -143,7 +143,7 @@ tail -f /path/to/homeassistant/config/home-assistant.log | grep solax_energy_opt
 
 1. Go to Settings → Devices & Services
 2. Click "+ Add Integration"
-3. Search for "Solax Energy Optimizer"
+3. Search for "Solar Energy Optimizer"
 4. Fill in the configuration
 5. Verify all entities appear
 

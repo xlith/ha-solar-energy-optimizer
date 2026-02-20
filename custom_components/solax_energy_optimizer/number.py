@@ -1,4 +1,4 @@
-"""Number platform for Solax Energy Optimizer."""
+"""Number platform for Solar Energy Optimizer."""
 from __future__ import annotations
 
 from homeassistant.components.number import NumberEntity, NumberMode

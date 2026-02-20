@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.0.1] - 2026-02-20
 
 ### Added
-- Initial release of Solax Energy Optimizer
+- Initial release of Solar Energy Optimizer
 - Four optimization strategies: minimize cost, maximize self-consumption, grid independence, balanced
 - Real-time monitoring with sensor entities (next action, last/next update time, daily/monthly cost and savings, decision reason, update count)
 - Manual control with switch entities (automation enabled, manual override, dry run mode)

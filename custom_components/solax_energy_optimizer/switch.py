@@ -1,4 +1,4 @@
-"""Switch platform for Solax Energy Optimizer."""
+"""Switch platform for Solar Energy Optimizer."""
 from __future__ import annotations
 
 from typing import Any

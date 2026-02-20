@@ -1,4 +1,4 @@
-"""The Solax Energy Optimizer integration."""
+"""The Solar Energy Optimizer integration."""
 from __future__ import annotations
 
 import logging
@@ -27,13 +27,16 @@ PLATFORMS: list[str] = [
 async def async_setup_entry(
     hass: HomeAssistant, entry: EnergyOptimizerConfigEntry
 ) -> bool:
-    """Set up Solax Energy Optimizer from a config entry."""
-    _LOGGER.info("Setting up Solax Energy Optimizer (entry_id=%s)", entry.entry_id)
+    """Set up Energy Optimizer from a config entry."""
+    _LOGGER.info("Setting up Solar Energy Optimizer (entry_id=%s)", entry.entry_id)
     _LOGGER.info(
-        "Configured entities - inverter: %s, solcast: %s, electricity_prices: %s",
-        entry.data.get("solax_inverter_entity"),
-        entry.data.get("solcast_entity"),
-        entry.data.get("frank_energie_entity"),
+        "Configured entities - inverter: %s [%s], forecast: %s [%s], prices: %s [%s]",
+        entry.data.get("inverter_entity"),
+        entry.data.get("inverter_type"),
+        entry.data.get("forecast_entity"),
+        entry.data.get("forecast_type"),
+        entry.data.get("prices_entity"),
+        entry.data.get("prices_type"),
     )
 
     coordinator = EnergyOptimizerCoordinator(hass, entry)
@@ -48,9 +51,9 @@ async def async_setup_entry(
     device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
         identifiers={(DOMAIN, entry.entry_id)},
-        name="Solax Energy Optimizer",
+        name="Solar Energy Optimizer",
         manufacturer="Custom",
-        model="Energy Optimizer",
+        model="Solar Energy Optimizer",
         entry_type=dr.DeviceEntryType.SERVICE,
     )
 
@@ -68,7 +71,7 @@ async def async_setup_entry(
         handle_trigger_optimization,
     )
 
-    _LOGGER.info("Solax Energy Optimizer setup complete")
+    _LOGGER.info("Solar Energy Optimizer setup complete")
     return True
 
 
@@ -76,7 +79,7 @@ async def async_unload_entry(
     hass: HomeAssistant, entry: EnergyOptimizerConfigEntry
 ) -> bool:
     """Unload a config entry."""
-    _LOGGER.info("Unloading Solax Energy Optimizer (entry_id=%s)", entry.entry_id)
+    _LOGGER.info("Unloading Solar Energy Optimizer (entry_id=%s)", entry.entry_id)
     result = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     _LOGGER.info("Unload result: %s", result)
     return result

@@ -1,4 +1,4 @@
-"""Sensor platform for Solax Energy Optimizer."""
+"""Sensor platform for Solar Energy Optimizer."""
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -45,7 +45,7 @@ from . import EnergyOptimizerConfigEntry
 
 @dataclass(frozen=True, kw_only=True)
 class EnergyOptimizerSensorDescription(SensorEntityDescription):
-    """Describes Energy Optimizer sensor entity."""
+    """Describes Solar Energy Optimizer sensor entity."""
 
     value_fn: Callable[[EnergyOptimizerData], str | float | datetime | None]
 
@@ -182,7 +182,7 @@ async def async_setup_entry(
 class EnergyOptimizerSensor(
     CoordinatorEntity[EnergyOptimizerCoordinator], SensorEntity
 ):
-    """Representation of an Energy Optimizer sensor."""
+    """Representation of a Solar Energy Optimizer sensor."""
 
     entity_description: EnergyOptimizerSensorDescription
     _attr_has_entity_name = True
