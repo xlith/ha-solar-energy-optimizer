@@ -116,10 +116,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
 
             # Get battery SOC
             inverter_entity = self.config_entry.data[CONF_SOLAX_INVERTER_ENTITY]
-            _LOGGER.error("DEBUG: Looking for battery entity: %s", inverter_entity)
-            _LOGGER.error("DEBUG: Total entities in HA: %d", len(list(self.hass.states.async_entity_ids())))
             inverter_state = self.hass.states.get(inverter_entity)
-            _LOGGER.error("DEBUG: Battery entity found: %s", inverter_state is not None)
             if inverter_state:
                 try:
                     state_value = inverter_state.state

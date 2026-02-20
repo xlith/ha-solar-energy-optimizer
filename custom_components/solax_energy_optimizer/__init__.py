@@ -41,7 +41,7 @@ async def async_setup_entry(
 
     _LOGGER = logging.getLogger(__name__)
 
-    # Wait for dependent entities to be available (max 30 seconds)
+    # Wait for dependent entities to be available (max 60 seconds)
     required_entities = [
         entry.data.get(CONF_SOLAX_INVERTER_ENTITY),
         entry.data.get(CONF_FRANK_ENERGIE_ENTITY),
@@ -50,16 +50,16 @@ async def async_setup_entry(
 
     _LOGGER.info("Waiting for required entities to be available: %s", required_entities)
 
-    for attempt in range(15):  # 15 attempts x 2 seconds = 30 seconds max
+    for attempt in range(30):  # 30 attempts x 2 seconds = 60 seconds max
         missing = [entity for entity in required_entities if entity and not hass.states.get(entity)]
         if not missing:
-            _LOGGER.info("All required entities are available")
+            _LOGGER.info("All required entities are available after %d seconds", (attempt + 1) * 2)
             break
-        _LOGGER.debug("Waiting for entities (attempt %d/15): %s", attempt + 1, missing)
+        _LOGGER.debug("Waiting for entities (attempt %d/30): %s", attempt + 1, missing)
         await asyncio.sleep(2)
     else:
         _LOGGER.warning(
-            "Some entities are still not available after 30 seconds: %s. Integration will continue but may have errors.",
+            "Some entities are still not available after 60 seconds: %s. Integration will continue but may have errors.",
             missing
         )
 
