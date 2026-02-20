@@ -57,3 +57,4 @@ class StrategySelect(CoordinatorEntity[EnergyOptimizerCoordinator], SelectEntity
         """Change the strategy."""
         self.coordinator.set_strategy(option)
         self.async_write_ha_state()
+        await self.coordinator.async_request_refresh()
