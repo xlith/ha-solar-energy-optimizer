@@ -12,7 +12,11 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import CURRENCY_EURO
+from homeassistant.const import (
+    CURRENCY_EURO,
+    PERCENTAGE,
+    UnitOfEnergy,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -22,6 +26,8 @@ from .const import (
     ATTR_CURRENT_PRICE,
     ATTR_DRY_RUN_MODE,
     DOMAIN,
+    ENTITY_BATTERY_SOC,
+    ENTITY_CURRENT_PRICE,
     ENTITY_DAILY_COST,
     ENTITY_DAILY_SAVINGS,
     ENTITY_DECISION_REASON,
@@ -30,6 +36,8 @@ from .const import (
     ENTITY_MONTHLY_SAVINGS,
     ENTITY_NEXT_ACTION,
     ENTITY_NEXT_UPDATE_TIME,
+    ENTITY_SOLAR_FORECAST_TODAY,
+    ENTITY_TARGET_SOC,
     ENTITY_UPDATE_COUNT,
 )
 from .coordinator import EnergyOptimizerCoordinator, EnergyOptimizerData
@@ -102,6 +110,50 @@ SENSORS: tuple[EnergyOptimizerSensorDescription, ...] = (
         state_class=SensorStateClass.TOTAL,
         icon="mdi:piggy-bank",
         value_fn=lambda data: round(data.monthly_savings, 2),
+    ),
+    EnergyOptimizerSensorDescription(
+        key=ENTITY_BATTERY_SOC,
+        translation_key="battery_soc",
+        name="Battery SOC",
+        native_unit_of_measurement=PERCENTAGE,
+        device_class=SensorDeviceClass.BATTERY,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:battery",
+        value_fn=lambda data: data.battery_soc,
+    ),
+    EnergyOptimizerSensorDescription(
+        key=ENTITY_CURRENT_PRICE,
+        translation_key="current_price",
+        name="Current electricity price",
+        native_unit_of_measurement=f"{CURRENCY_EURO}/kWh",
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:currency-eur",
+        value_fn=lambda data: (
+            round(data.current_price, 4) if data.current_price is not None else None
+        ),
+    ),
+    EnergyOptimizerSensorDescription(
+        key=ENTITY_SOLAR_FORECAST_TODAY,
+        translation_key="solar_forecast_today",
+        name="Solar forecast today",
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:solar-power",
+        value_fn=lambda data: (
+            round(data.solar_forecast_today, 2)
+            if data.solar_forecast_today is not None
+            else None
+        ),
+    ),
+    EnergyOptimizerSensorDescription(
+        key=ENTITY_TARGET_SOC,
+        translation_key="target_soc",
+        name="Target SOC",
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        icon="mdi:battery-arrow-up",
+        value_fn=lambda data: data.target_soc,
     ),
     EnergyOptimizerSensorDescription(
         key=ENTITY_DECISION_REASON,
@@ -180,10 +232,10 @@ class EnergyOptimizerSensor(
 
 
 class UpdateCountSensor(CoordinatorEntity[EnergyOptimizerCoordinator], SensorEntity):
-    """Sensor that counts how many update cycles have completed."""
+    """Sensor that counts how many times a charge/discharge action was issued to the inverter."""
 
     _attr_has_entity_name = True
-    _attr_name = "Update count"
+    _attr_name = "Inverter update count"
     _attr_icon = "mdi:counter"
     _attr_state_class = SensorStateClass.TOTAL_INCREASING
     _attr_native_unit_of_measurement = None

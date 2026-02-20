@@ -13,12 +13,8 @@ from .const import (
     CONF_ELECTRICITY_PRICES_ENTITY,
     CONF_MAX_CHARGE_RATE,
     CONF_MAX_DISCHARGE_RATE,
-    CONF_MAX_SOC,
-    CONF_MIN_SOC,
     CONF_SOLCAST_ENTITY,
     CONF_SOLAX_INVERTER_ENTITY,
-    DEFAULT_MAX_SOC,
-    DEFAULT_MIN_SOC,
     DOMAIN,
 )
 
@@ -89,24 +85,6 @@ class SolaxEnergyOptimizerConfigFlow(ConfigFlow, domain=DOMAIN):
                         step=0.1,
                         unit_of_measurement="kW",
                         mode=selector.NumberSelectorMode.BOX,
-                    )
-                ),
-                vol.Optional(CONF_MIN_SOC, default=DEFAULT_MIN_SOC): selector.NumberSelector(
-                    selector.NumberSelectorConfig(
-                        min=0,
-                        max=100,
-                        step=1,
-                        unit_of_measurement="%",
-                        mode=selector.NumberSelectorMode.SLIDER,
-                    )
-                ),
-                vol.Optional(CONF_MAX_SOC, default=DEFAULT_MAX_SOC): selector.NumberSelector(
-                    selector.NumberSelectorConfig(
-                        min=0,
-                        max=100,
-                        step=1,
-                        unit_of_measurement="%",
-                        mode=selector.NumberSelectorMode.SLIDER,
                     )
                 ),
             }

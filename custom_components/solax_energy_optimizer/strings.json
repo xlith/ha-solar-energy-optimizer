@@ -10,9 +10,7 @@
           "frank_energie_entity": "Frank Energie Price Entity",
           "battery_capacity": "Battery Capacity",
           "max_charge_rate": "Maximum Charge Rate",
-          "max_discharge_rate": "Maximum Discharge Rate",
-          "min_soc": "Minimum State of Charge",
-          "max_soc": "Maximum State of Charge"
+          "max_discharge_rate": "Maximum Discharge Rate"
         },
         "data_description": {
           "solax_inverter_entity": "Select the sensor that reports your battery's state of charge (SOC)",
@@ -20,9 +18,7 @@
           "frank_energie_entity": "Select the Frank Energie sensor that provides current electricity prices",
           "battery_capacity": "Total capacity of your battery in kWh",
           "max_charge_rate": "Maximum rate at which your battery can charge in kW",
-          "max_discharge_rate": "Maximum rate at which your battery can discharge in kW",
-          "min_soc": "Minimum battery charge level to maintain (safety buffer)",
-          "max_soc": "Maximum battery charge level to prevent overcharging"
+          "max_discharge_rate": "Maximum rate at which your battery can discharge in kW"
         }
       }
     },
@@ -33,24 +29,42 @@
       "already_configured": "This configuration is already set up."
     }
   },
-  "options": {
-    "step": {
-      "init": {
-        "title": "Optimizer Options",
-        "data": {
-          "min_soc": "Minimum State of Charge",
-          "max_soc": "Maximum State of Charge"
-        }
-      }
-    }
-  },
   "entity": {
+    "number": {
+      "min_soc": {
+        "name": "Minimum SOC"
+      },
+      "max_soc": {
+        "name": "Maximum SOC"
+      }
+    },
     "sensor": {
+      "battery_soc": {
+        "name": "Battery SOC"
+      },
+      "current_price": {
+        "name": "Current electricity price"
+      },
+      "solar_forecast_today": {
+        "name": "Solar forecast today"
+      },
+      "target_soc": {
+        "name": "Target SOC"
+      },
       "next_action": {
         "name": "Next action"
       },
-      "next_action_time": {
-        "name": "Next action time"
+      "last_action_time": {
+        "name": "Last action time"
+      },
+      "next_update_time": {
+        "name": "Next update time"
+      },
+      "decision_reason": {
+        "name": "Decision reason"
+      },
+      "update_count": {
+        "name": "Inverter update count"
       },
       "daily_cost": {
         "name": "Daily cost"

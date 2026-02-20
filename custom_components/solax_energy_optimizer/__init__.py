@@ -17,6 +17,7 @@ _LOGGER = logging.getLogger(__name__)
 SERVICE_TRIGGER_OPTIMIZATION = "trigger_optimization"
 
 PLATFORMS: list[str] = [
+    "number",
     "sensor",
     "switch",
     "select",

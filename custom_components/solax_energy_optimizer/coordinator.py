@@ -19,6 +19,8 @@ from .const import (
     CONF_MIN_SOC,
     CONF_SOLCAST_ENTITY,
     CONF_SOLAX_INVERTER_ENTITY,
+    DEFAULT_MAX_SOC,
+    DEFAULT_MIN_SOC,
     DEFAULT_UPDATE_INTERVAL,
     DOMAIN,
     STRATEGY_BALANCED,
@@ -37,6 +39,7 @@ class EnergyOptimizerData:
         """Initialize data."""
         self.battery_soc: float | None = None
         self.current_price: float | None = None
+        self.solar_forecast_today: float | None = None
         self.prices_today: list[dict[str, Any]] = []
         self.prices_tomorrow: list[dict[str, Any]] = []
         self.solar_forecast: list[dict[str, Any]] = []
@@ -61,13 +64,16 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             _LOGGER,
             name=DOMAIN,
             update_interval=DEFAULT_UPDATE_INTERVAL,
+            config_entry=entry,
         )
-        self.config_entry = entry
         self._current_strategy = STRATEGY_MINIMIZE_COST
         self._automation_enabled = True
         self._manual_override = False
         self._dry_run_mode = True  # Default to dry run for safety
-        self._update_count: int = 0
+        self._cycle_count: int = 0
+        self._inverter_update_count: int = 0
+        self._min_soc: float = float(entry.data.get(CONF_MIN_SOC, DEFAULT_MIN_SOC))
+        self._max_soc: float = float(entry.data.get(CONF_MAX_SOC, DEFAULT_MAX_SOC))
 
     @property
     def current_strategy(self) -> str:
@@ -111,13 +117,33 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
 
     @property
     def update_count(self) -> int:
-        """Return total number of completed update cycles."""
-        return self._update_count
+        """Return total number of times a charge/discharge action was issued to the inverter."""
+        return self._inverter_update_count
+
+    @property
+    def min_soc(self) -> float:
+        """Return minimum SOC threshold."""
+        return self._min_soc
+
+    def set_min_soc(self, value: float) -> None:
+        """Set minimum SOC threshold."""
+        self._min_soc = value
+        _LOGGER.info("Minimum SOC set to %.0f%%", value)
+
+    @property
+    def max_soc(self) -> float:
+        """Return maximum SOC threshold."""
+        return self._max_soc
+
+    def set_max_soc(self, value: float) -> None:
+        """Set maximum SOC threshold."""
+        self._max_soc = value
+        _LOGGER.info("Maximum SOC set to %.0f%%", value)
 
     async def _async_update_data(self) -> EnergyOptimizerData:
         """Fetch data from dependencies and run optimization."""
-        self._update_count += 1
-        _LOGGER.info("=== Update cycle #%d start ===", self._update_count)
+        self._cycle_count += 1
+        _LOGGER.info("=== Update cycle #%d start ===", self._cycle_count)
         try:
             data = EnergyOptimizerData()
             data.next_update_time = dt_util.now() + DEFAULT_UPDATE_INTERVAL
@@ -149,6 +175,11 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             elif solcast_state.attributes:
                 forecasts = solcast_state.attributes.get("detailedForecast", [])
                 data.solar_forecast = forecasts
+                if solcast_state.state not in ("unavailable", "unknown"):
+                    try:
+                        data.solar_forecast_today = float(solcast_state.state)
+                    except (ValueError, TypeError):
+                        pass
                 # Log the next 3 non-zero solar periods for context
                 upcoming = [
                     f for f in forecasts
@@ -194,8 +225,9 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
 
             # --- Optimization ---
             _LOGGER.info(
-                "[optimizer] #%d | strategy=%s | automation=%s | manual_override=%s | dry_run=%s",
-                self._update_count,
+                "[optimizer] cycle=#%d inverter_updates=%d | strategy=%s | automation=%s | manual_override=%s | dry_run=%s",
+                self._cycle_count,
+                self._inverter_update_count,
                 self._current_strategy,
                 self._automation_enabled,
                 self._manual_override,
@@ -204,12 +236,15 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
 
             if self._automation_enabled and not self._manual_override:
                 self._run_optimization(data)
+                if data.next_action != ACTION_IDLE:
+                    self._inverter_update_count += 1
                 mode = "DRY RUN" if self._dry_run_mode else "LIVE"
                 _LOGGER.info(
-                    "[optimizer] %s | action=%s | target_soc=%s%% | reason: %s",
+                    "[optimizer] %s | action=%s | target_soc=%s%% | inverter_updates=%d | reason: %s",
                     mode,
                     data.next_action,
                     data.target_soc,
+                    self._inverter_update_count,
                     data.decision_reason,
                 )
             else:
@@ -217,16 +252,16 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
                 data.decision_reason = reason
                 _LOGGER.info("[optimizer] skipped — %s", reason)
 
-            _LOGGER.info("=== Update cycle #%d end ===", self._update_count)
+            _LOGGER.info("=== Update cycle #%d end ===", self._cycle_count)
             return data
 
         except Exception as err:
-            _LOGGER.error("Update cycle #%d failed: %s (%s)", self._update_count, err, type(err).__name__, exc_info=True)
+            _LOGGER.error("Update cycle #%d failed: %s (%s)", self._cycle_count, err, type(err).__name__, exc_info=True)
             raise UpdateFailed(f"Error fetching data: {err}") from err
 
     def _run_optimization(self, data: EnergyOptimizerData) -> None:
         """Run optimization algorithm based on current strategy."""
-        min_soc = float(self.config_entry.data.get(CONF_MIN_SOC, 20))
+        min_soc = self._min_soc
 
         # Safety override: charge immediately if SOC is below the configured minimum
         if data.battery_soc is not None and data.battery_soc < min_soc:
@@ -287,8 +322,8 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         cheap_price_threshold = lowest_price_val + (price_range * 0.25)
         expensive_price_threshold = highest_price_val - (price_range * 0.25)
         current_price = data.current_price or 0
-        min_soc = float(self.config_entry.data.get(CONF_MIN_SOC, 20))
-        max_soc = float(self.config_entry.data.get(CONF_MAX_SOC, 95))
+        min_soc = self._min_soc
+        max_soc = self._max_soc
 
         _LOGGER.info(
             "[minimize_cost] inputs:"
@@ -365,7 +400,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             return
 
         now = dt_util.now()
-        max_soc = float(self.config_entry.data.get(CONF_MAX_SOC, 95))
+        max_soc = self._max_soc
 
         next_solar_period = None
         for forecast in data.solar_forecast:
@@ -413,7 +448,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
 
     def _optimize_grid_independence(self, data: EnergyOptimizerData) -> None:
         """Optimize for grid independence."""
-        max_soc = float(self.config_entry.data.get(CONF_MAX_SOC, 95))
+        max_soc = self._max_soc
 
         _LOGGER.info(
             "[grid_independence] inputs: SOC=%s%% | max_soc=%.0f%%",
@@ -440,8 +475,8 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
 
     def _optimize_balanced(self, data: EnergyOptimizerData) -> None:
         """Optimize with a balanced approach."""
-        min_soc = float(self.config_entry.data.get(CONF_MIN_SOC, 20))
-        max_soc = float(self.config_entry.data.get(CONF_MAX_SOC, 95))
+        min_soc = self._min_soc
+        max_soc = self._max_soc
 
         if not data.prices_today:
             data.next_action = ACTION_IDLE
