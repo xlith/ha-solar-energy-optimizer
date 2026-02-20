@@ -30,7 +30,11 @@ async def async_setup_entry(
     hass: HomeAssistant, entry: EnergyOptimizerConfigEntry
 ) -> bool:
     """Set up Solax Energy Optimizer from a config entry."""
+    import asyncio
     from .coordinator import EnergyOptimizerCoordinator
+
+    # Small delay to ensure dependencies like Frank Energie are loaded
+    await asyncio.sleep(2)
 
     coordinator = EnergyOptimizerCoordinator(hass, entry)
 
