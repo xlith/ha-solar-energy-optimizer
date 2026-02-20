@@ -136,7 +136,16 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
                         str(e),
                     )
             else:
-                _LOGGER.warning("Battery SOC entity %s not found", inverter_entity)
+                _LOGGER.error("Battery SOC entity %s not found", inverter_entity)
+                # List available Solax entities to help with configuration
+                available_entities = [
+                    entity_id for entity_id in self.hass.states.async_entity_ids()
+                    if "solax" in entity_id.lower() or "battery" in entity_id.lower() or "soc" in entity_id.lower()
+                ]
+                if available_entities:
+                    _LOGGER.info("Available Solax/battery entities: %s", available_entities)
+                else:
+                    _LOGGER.warning("No Solax or battery entities found. Is the Solax Modbus integration loaded?")
 
             # Get solar forecast
             solcast_entity = self.config_entry.data[CONF_SOLCAST_ENTITY]
@@ -144,6 +153,15 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             if solcast_state and solcast_state.attributes:
                 # Extract forecast data from attributes
                 data.solar_forecast = solcast_state.attributes.get("forecasts", [])
+            elif not solcast_state:
+                _LOGGER.warning("Solcast entity %s not found", solcast_entity)
+                # List available Solcast entities to help with configuration
+                available_entities = [
+                    entity_id for entity_id in self.hass.states.async_entity_ids()
+                    if "solcast" in entity_id.lower() or "solar" in entity_id.lower() or "forecast" in entity_id.lower()
+                ]
+                if available_entities:
+                    _LOGGER.info("Available Solcast/solar entities: %s", available_entities)
 
             # Get energy prices
             frank_entity = self.config_entry.data[CONF_FRANK_ENERGIE_ENTITY]
