@@ -12,7 +12,6 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CURRENCY_EURO
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -25,11 +24,13 @@ from .const import (
     DOMAIN,
     ENTITY_DAILY_COST,
     ENTITY_DAILY_SAVINGS,
+    ENTITY_DECISION_REASON,
     ENTITY_LAST_ACTION_TIME,
     ENTITY_MONTHLY_COST,
     ENTITY_MONTHLY_SAVINGS,
     ENTITY_NEXT_ACTION,
     ENTITY_NEXT_UPDATE_TIME,
+    ENTITY_UPDATE_COUNT,
 )
 from .coordinator import EnergyOptimizerCoordinator, EnergyOptimizerData
 from . import EnergyOptimizerConfigEntry
@@ -102,6 +103,13 @@ SENSORS: tuple[EnergyOptimizerSensorDescription, ...] = (
         icon="mdi:piggy-bank",
         value_fn=lambda data: round(data.monthly_savings, 2),
     ),
+    EnergyOptimizerSensorDescription(
+        key=ENTITY_DECISION_REASON,
+        translation_key="decision_reason",
+        name="Decision reason",
+        icon="mdi:comment-question",
+        value_fn=lambda data: data.decision_reason,
+    ),
 )
 
 
@@ -113,10 +121,12 @@ async def async_setup_entry(
     """Set up sensor platform."""
     coordinator = entry.runtime_data
 
-    async_add_entities(
+    entities: list[SensorEntity] = [
         EnergyOptimizerSensor(coordinator, description, entry)
         for description in SENSORS
-    )
+    ]
+    entities.append(UpdateCountSensor(coordinator, entry))
+    async_add_entities(entities)
 
 
 class EnergyOptimizerSensor(
@@ -157,4 +167,40 @@ class EnergyOptimizerSensor(
                 "strategy": self.coordinator.current_strategy,
                 ATTR_DRY_RUN_MODE: self.coordinator.dry_run_mode,
             }
+        if self.entity_description.key == ENTITY_DECISION_REASON:
+            return {
+                ATTR_BATTERY_SOC: self.coordinator.data.battery_soc,
+                ATTR_CURRENT_PRICE: self.coordinator.data.current_price,
+                "target_soc": self.coordinator.data.target_soc,
+                "strategy": self.coordinator.current_strategy,
+                "update_count": self.coordinator.update_count,
+                "last_action_time": self.coordinator.data.last_action_time,
+            }
         return {}
+
+
+class UpdateCountSensor(CoordinatorEntity[EnergyOptimizerCoordinator], SensorEntity):
+    """Sensor that counts how many update cycles have completed."""
+
+    _attr_has_entity_name = True
+    _attr_name = "Update count"
+    _attr_icon = "mdi:counter"
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_native_unit_of_measurement = None
+
+    def __init__(
+        self,
+        coordinator: EnergyOptimizerCoordinator,
+        entry: EnergyOptimizerConfigEntry,
+    ) -> None:
+        """Initialize the update count sensor."""
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_{ENTITY_UPDATE_COUNT}"
+        self._attr_device_info = {
+            "identifiers": {(DOMAIN, entry.entry_id)},
+        }
+
+    @property
+    def native_value(self) -> int:
+        """Return the number of completed update cycles."""
+        return self.coordinator.update_count

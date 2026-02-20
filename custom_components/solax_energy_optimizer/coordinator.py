@@ -44,6 +44,7 @@ class EnergyOptimizerData:
         self.last_action_time: datetime | None = None
         self.next_update_time: datetime | None = None
         self.target_soc: float | None = None
+        self.decision_reason: str = ""
         self.daily_cost: float = 0.0
         self.daily_savings: float = 0.0
         self.monthly_cost: float = 0.0
@@ -66,6 +67,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         self._automation_enabled = True
         self._manual_override = False
         self._dry_run_mode = True  # Default to dry run for safety
+        self._update_count: int = 0
 
     @property
     def current_strategy(self) -> str:
@@ -107,9 +109,15 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         self._dry_run_mode = dry_run
         _LOGGER.info("Dry run mode: %s", dry_run)
 
+    @property
+    def update_count(self) -> int:
+        """Return total number of completed update cycles."""
+        return self._update_count
+
     async def _async_update_data(self) -> EnergyOptimizerData:
         """Fetch data from dependencies and run optimization."""
-        _LOGGER.info("--- Update cycle start ---")
+        self._update_count += 1
+        _LOGGER.info("=== Update cycle #%d start ===", self._update_count)
         try:
             data = EnergyOptimizerData()
             data.next_update_time = dt_util.now() + DEFAULT_UPDATE_INTERVAL
@@ -141,7 +149,23 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             elif solcast_state.attributes:
                 forecasts = solcast_state.attributes.get("detailedForecast", [])
                 data.solar_forecast = forecasts
-                _LOGGER.info("[solcast] %s: state=%s, %d forecast entries", solcast_entity, solcast_state.state, len(forecasts))
+                # Log the next 3 non-zero solar periods for context
+                upcoming = [
+                    f for f in forecasts
+                    if self._parse_datetime(f.get("period_start", "")) > datetime.now()
+                    and f.get("pv_estimate", 0) > 0
+                ][:3]
+                upcoming_str = ", ".join(
+                    f"{f.get('period_start', '?')[11:16]}={f.get('pv_estimate', 0):.2f}kW"
+                    for f in upcoming
+                ) or "none"
+                _LOGGER.info(
+                    "[solcast] %s: today_total=%.3f kWh, %d forecast entries, next non-zero: %s",
+                    solcast_entity,
+                    float(solcast_state.state) if solcast_state.state not in ("unavailable", "unknown") else 0,
+                    len(forecasts),
+                    upcoming_str,
+                )
             else:
                 _LOGGER.info("[solcast] %s: state=%s, no attributes", solcast_entity, solcast_state.state)
 
@@ -153,21 +177,25 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             else:
                 try:
                     data.current_price = float(prices_state.state)
-                    _LOGGER.info("[prices] %s: current_price=%.4f", prices_entity, data.current_price)
                 except (ValueError, TypeError) as e:
                     _LOGGER.warning("[prices] %s: could not parse state='%s' as float: %s", prices_entity, prices_state.state, e)
 
                 if prices_state.attributes:
                     price_entries = prices_state.attributes.get("prices", [])
-                    entry_count = len(price_entries) if isinstance(price_entries, list) else "N/A"
-                    _LOGGER.info("[prices] %s: %s price entries in attributes", prices_entity, entry_count)
                     data.prices_today = price_entries if isinstance(price_entries, list) else []
+                    _LOGGER.info(
+                        "[prices] %s: current=€%.4f/kWh, %d price entries loaded",
+                        prices_entity,
+                        data.current_price if data.current_price is not None else 0,
+                        len(data.prices_today),
+                    )
                 else:
                     _LOGGER.warning("[prices] %s: entity has no attributes", prices_entity)
 
             # --- Optimization ---
             _LOGGER.info(
-                "[optimizer] strategy=%s, automation=%s, manual_override=%s, dry_run=%s",
+                "[optimizer] #%d | strategy=%s | automation=%s | manual_override=%s | dry_run=%s",
+                self._update_count,
                 self._current_strategy,
                 self._automation_enabled,
                 self._manual_override,
@@ -178,33 +206,38 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
                 self._run_optimization(data)
                 mode = "DRY RUN" if self._dry_run_mode else "LIVE"
                 _LOGGER.info(
-                    "[optimizer] %s: action=%s, target_soc=%s%%",
+                    "[optimizer] %s | action=%s | target_soc=%s%% | reason: %s",
                     mode,
                     data.next_action,
                     data.target_soc,
+                    data.decision_reason,
                 )
             else:
-                _LOGGER.info("[optimizer] skipped (automation=%s, manual_override=%s)", self._automation_enabled, self._manual_override)
+                reason = "automation disabled" if not self._automation_enabled else "manual override active"
+                data.decision_reason = reason
+                _LOGGER.info("[optimizer] skipped — %s", reason)
 
-            _LOGGER.info("--- Update cycle end ---")
+            _LOGGER.info("=== Update cycle #%d end ===", self._update_count)
             return data
 
         except Exception as err:
-            _LOGGER.error("Update cycle failed: %s (%s)", err, type(err).__name__, exc_info=True)
+            _LOGGER.error("Update cycle #%d failed: %s (%s)", self._update_count, err, type(err).__name__, exc_info=True)
             raise UpdateFailed(f"Error fetching data: {err}") from err
 
     def _run_optimization(self, data: EnergyOptimizerData) -> None:
         """Run optimization algorithm based on current strategy."""
-        _LOGGER.info("[optimizer] running strategy: %s", self._current_strategy)
-
-        # Safety: always charge if SOC is below minimum, regardless of strategy or price
         min_soc = float(self.config_entry.data.get(CONF_MIN_SOC, 20))
+
+        # Safety override: charge immediately if SOC is below the configured minimum
         if data.battery_soc is not None and data.battery_soc < min_soc:
             data.next_action = ACTION_CHARGE
             data.target_soc = min_soc
             data.last_action_time = dt_util.now()
+            data.decision_reason = (
+                f"Safety override — SOC {data.battery_soc:.1f}% is below minimum {min_soc:.0f}%"
+            )
             _LOGGER.info(
-                "[optimizer] safety override: SOC=%.1f%% < min=%.0f%%, forcing CHARGE to %.0f%%",
+                "[optimizer] SAFETY OVERRIDE | SOC=%.1f%% < min=%.0f%% | action=CHARGE to %.0f%%",
                 data.battery_soc,
                 min_soc,
                 min_soc,
@@ -220,18 +253,12 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         elif self._current_strategy == STRATEGY_BALANCED:
             self._optimize_balanced(data)
 
-        _LOGGER.info(
-            "[optimizer] result: action=%s, target_soc=%s%%, last_action_time=%s",
-            data.next_action,
-            data.target_soc,
-            data.last_action_time,
-        )
-
     def _optimize_minimize_cost(self, data: EnergyOptimizerData) -> None:
         """Optimize to minimize energy costs."""
         if not data.prices_today:
-            _LOGGER.info("[minimize_cost] no price data, action=idle")
             data.next_action = ACTION_IDLE
+            data.decision_reason = "No price data available"
+            _LOGGER.info("[minimize_cost] no price data → idle")
             return
 
         current_naive = datetime.now().replace(tzinfo=None)
@@ -248,21 +275,14 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
                 _LOGGER.error("[minimize_cost] error processing price entry %s: %s", p, e, exc_info=True)
 
         if not future_prices:
-            _LOGGER.info("[minimize_cost] no future prices found, action=idle")
             data.next_action = ACTION_IDLE
+            data.decision_reason = "No future price entries found"
+            _LOGGER.info("[minimize_cost] no future prices → idle")
             return
 
         prices_by_value = sorted(future_prices, key=lambda x: float(x.get("price", 0)))
-        lowest_price = prices_by_value[0]
-        highest_price = prices_by_value[-1]
-
-        try:
-            lowest_price_val = float(lowest_price.get("price", 0))
-            highest_price_val = float(highest_price.get("price", 0))
-        except (AttributeError, TypeError, ValueError) as e:
-            _LOGGER.error("[minimize_cost] could not read price values: %s", e)
-            data.next_action = ACTION_IDLE
-            return
+        lowest_price_val = float(prices_by_value[0].get("price", 0))
+        highest_price_val = float(prices_by_value[-1].get("price", 0))
 
         price_range = highest_price_val - lowest_price_val
         cheap_price_threshold = lowest_price_val + (price_range * 0.25)
@@ -272,7 +292,14 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         max_soc = float(self.config_entry.data.get(CONF_MAX_SOC, 95))
 
         _LOGGER.info(
-            "[minimize_cost] price: current=%.4f, range=[%.4f, %.4f], cheap_threshold=%.4f, expensive_threshold=%.4f | soc=%.1f%%, limits=[%.0f%%, %.0f%%]",
+            "[minimize_cost] inputs:"
+            " current_price=€%.4f"
+            " | price_range=[€%.4f, €%.4f]"
+            " | cheap_threshold=€%.4f (bottom 25%%)"
+            " | expensive_threshold=€%.4f (top 25%%)"
+            " | SOC=%.1f%%"
+            " | SOC_limits=[%.0f%%, %.0f%%]"
+            " | future_prices=%d",
             current_price,
             lowest_price_val,
             highest_price_val,
@@ -281,29 +308,61 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             data.battery_soc if data.battery_soc is not None else -1,
             min_soc,
             max_soc,
+            len(future_prices),
         )
 
         if current_price <= cheap_price_threshold and data.battery_soc is not None and data.battery_soc < max_soc:
             data.next_action = ACTION_CHARGE
             data.target_soc = max_soc
             data.last_action_time = dt_util.now()
-            _LOGGER.info("[minimize_cost] decision=CHARGE (price %.4f <= cheap_threshold %.4f, soc %.1f%% < max %.0f%%)",
-                         current_price, cheap_price_threshold, data.battery_soc, max_soc)
+            data.decision_reason = (
+                f"Price €{current_price:.4f} ≤ cheap threshold €{cheap_price_threshold:.4f} "
+                f"and SOC {data.battery_soc:.1f}% < max {max_soc:.0f}%"
+            )
+            _LOGGER.info(
+                "[minimize_cost] CHARGE | €%.4f ≤ cheap_threshold €%.4f | SOC %.1f%% < max %.0f%%",
+                current_price, cheap_price_threshold, data.battery_soc, max_soc,
+            )
         elif current_price >= expensive_price_threshold and data.battery_soc is not None and data.battery_soc > min_soc:
             data.next_action = ACTION_DISCHARGE
             data.target_soc = min_soc
             data.last_action_time = dt_util.now()
-            _LOGGER.info("[minimize_cost] decision=DISCHARGE (price %.4f >= expensive_threshold %.4f, soc %.1f%% > min %.0f%%)",
-                         current_price, expensive_price_threshold, data.battery_soc, min_soc)
+            data.decision_reason = (
+                f"Price €{current_price:.4f} ≥ expensive threshold €{expensive_price_threshold:.4f} "
+                f"and SOC {data.battery_soc:.1f}% > min {min_soc:.0f}%"
+            )
+            _LOGGER.info(
+                "[minimize_cost] DISCHARGE | €%.4f ≥ expensive_threshold €%.4f | SOC %.1f%% > min %.0f%%",
+                current_price, expensive_price_threshold, data.battery_soc, min_soc,
+            )
         else:
             data.next_action = ACTION_IDLE
-            _LOGGER.info("[minimize_cost] decision=IDLE")
+            # Explain exactly why idle was chosen
+            if current_price > cheap_price_threshold and current_price < expensive_price_threshold:
+                reason = (
+                    f"Price €{current_price:.4f} is in moderate range "
+                    f"(€{cheap_price_threshold:.4f}–€{expensive_price_threshold:.4f})"
+                )
+            elif data.battery_soc is None:
+                reason = "Battery SOC unavailable"
+            elif current_price <= cheap_price_threshold and data.battery_soc is not None and data.battery_soc >= max_soc:
+                reason = f"Price is cheap but battery already at max SOC ({data.battery_soc:.1f}%)"
+            elif current_price >= expensive_price_threshold and data.battery_soc is not None and data.battery_soc <= min_soc:
+                reason = f"Price is expensive but battery already at min SOC ({data.battery_soc:.1f}%)"
+            else:
+                reason = (
+                    f"Price €{current_price:.4f} in moderate range "
+                    f"(cheap=€{cheap_price_threshold:.4f}, expensive=€{expensive_price_threshold:.4f})"
+                )
+            data.decision_reason = reason
+            _LOGGER.info("[minimize_cost] IDLE | %s", reason)
 
     def _optimize_maximize_self_consumption(self, data: EnergyOptimizerData) -> None:
         """Optimize to maximize self-consumption of solar energy."""
         if not data.solar_forecast:
-            _LOGGER.info("[maximize_self_consumption] no solar forecast, action=idle")
             data.next_action = ACTION_IDLE
+            data.decision_reason = "No solar forecast data available"
+            _LOGGER.info("[maximize_self_consumption] no solar forecast → idle")
             return
 
         current_time = datetime.now()
@@ -318,34 +377,67 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
 
         if next_solar_period:
             pv = next_solar_period.get("pv_estimate", 0)
-            _LOGGER.info("[maximize_self_consumption] next solar period: pv_estimate=%.2f kW at %s",
-                         pv, next_solar_period.get("period_start"))
+            period_start = next_solar_period.get("period_start", "?")
+            _LOGGER.info(
+                "[maximize_self_consumption] inputs: next_solar_period=%s pv_estimate=%.2f kW | SOC=%.1f%% | max_soc=%.0f%% | headroom_threshold=%.0f%%",
+                period_start, pv,
+                data.battery_soc if data.battery_soc is not None else -1,
+                max_soc,
+                max_soc - 20,
+            )
             if data.battery_soc is not None and data.battery_soc > max_soc - 20:
                 data.next_action = ACTION_DISCHARGE
                 data.target_soc = max_soc - 20
-                _LOGGER.info("[maximize_self_consumption] decision=DISCHARGE to make room (soc=%.1f%%)", data.battery_soc)
+                data.decision_reason = (
+                    f"Solar expected {pv:.2f} kW at {period_start[11:16]} — "
+                    f"discharging to {max_soc - 20:.0f}% to make room (SOC {data.battery_soc:.1f}% > headroom threshold {max_soc - 20:.0f}%)"
+                )
+                _LOGGER.info(
+                    "[maximize_self_consumption] DISCHARGE to %.0f%% | SOC %.1f%% > headroom threshold %.0f%% | solar=%.2f kW at %s",
+                    max_soc - 20, data.battery_soc, max_soc - 20, pv, period_start[11:16],
+                )
             else:
                 data.next_action = ACTION_IDLE
-                _LOGGER.info("[maximize_self_consumption] decision=IDLE (battery has room)")
+                data.decision_reason = (
+                    f"Solar expected {pv:.2f} kW at {period_start[11:16]} — "
+                    f"battery has enough room (SOC {data.battery_soc:.1f}% ≤ {max_soc - 20:.0f}%)"
+                )
+                _LOGGER.info(
+                    "[maximize_self_consumption] IDLE | battery has room | SOC=%.1f%% ≤ headroom_threshold=%.0f%%",
+                    data.battery_soc if data.battery_soc is not None else -1,
+                    max_soc - 20,
+                )
         else:
             data.next_action = ACTION_IDLE
-            _LOGGER.info("[maximize_self_consumption] decision=IDLE (no significant solar expected)")
+            data.decision_reason = "No significant solar production expected (all periods < 1.0 kW)"
+            _LOGGER.info("[maximize_self_consumption] IDLE | no solar period > 1.0 kW found in forecast")
 
     def _optimize_grid_independence(self, data: EnergyOptimizerData) -> None:
         """Optimize for grid independence."""
         max_soc = float(self.config_entry.data.get(CONF_MAX_SOC, 95))
 
+        _LOGGER.info(
+            "[grid_independence] inputs: SOC=%s%% | max_soc=%.0f%%",
+            f"{data.battery_soc:.1f}" if data.battery_soc is not None else "unavailable",
+            max_soc,
+        )
+
         if data.battery_soc is not None:
             if data.battery_soc < max_soc:
                 data.next_action = ACTION_CHARGE
                 data.target_soc = max_soc
-                _LOGGER.info("[grid_independence] decision=CHARGE (soc=%.1f%% < max=%.0f%%)", data.battery_soc, max_soc)
+                data.decision_reason = (
+                    f"Grid independence — charging to max {max_soc:.0f}% (SOC {data.battery_soc:.1f}% < {max_soc:.0f}%)"
+                )
+                _LOGGER.info("[grid_independence] CHARGE to %.0f%% | SOC %.1f%% < max %.0f%%", max_soc, data.battery_soc, max_soc)
             else:
                 data.next_action = ACTION_IDLE
-                _LOGGER.info("[grid_independence] decision=IDLE (soc=%.1f%% >= max=%.0f%%)", data.battery_soc, max_soc)
+                data.decision_reason = f"Battery already at max SOC ({data.battery_soc:.1f}% ≥ {max_soc:.0f}%)"
+                _LOGGER.info("[grid_independence] IDLE | SOC %.1f%% ≥ max %.0f%%", data.battery_soc, max_soc)
         else:
             data.next_action = ACTION_IDLE
-            _LOGGER.info("[grid_independence] decision=IDLE (no battery SOC available)")
+            data.decision_reason = "Battery SOC unavailable"
+            _LOGGER.info("[grid_independence] IDLE | battery SOC unavailable")
 
     def _optimize_balanced(self, data: EnergyOptimizerData) -> None:
         """Optimize with a balanced approach."""
@@ -353,43 +445,72 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         max_soc = float(self.config_entry.data.get(CONF_MAX_SOC, 95))
 
         if not data.prices_today:
-            _LOGGER.info("[balanced] no price data, action=idle")
             data.next_action = ACTION_IDLE
+            data.decision_reason = "No price data available"
+            _LOGGER.info("[balanced] no price data → idle")
             return
 
         current_naive = datetime.now().replace(tzinfo=None)
-        future_prices = []
-        for p in data.prices_today:
-            parsed_naive = self._parse_datetime(p.get("from", "")).replace(tzinfo=None)
-            if parsed_naive >= current_naive:
-                future_prices.append(p)
+        future_prices = [
+            p for p in data.prices_today
+            if self._parse_datetime(p.get("from", "")).replace(tzinfo=None) >= current_naive
+        ]
 
         if not future_prices:
-            _LOGGER.info("[balanced] no future prices, action=idle")
             data.next_action = ACTION_IDLE
+            data.decision_reason = "No future price entries found"
+            _LOGGER.info("[balanced] no future prices → idle")
             return
 
         avg_price = sum(float(p.get("price", 0)) for p in future_prices) / len(future_prices)
         current_price = data.current_price or 0
+        charge_threshold = avg_price * 0.9
+        discharge_threshold = avg_price * 1.1
 
         _LOGGER.info(
-            "[balanced] current_price=%.4f, avg_price=%.4f, soc=%s%%",
+            "[balanced] inputs:"
+            " current_price=€%.4f"
+            " | avg_price=€%.4f (over %d future periods)"
+            " | charge_threshold=€%.4f (avg×0.9)"
+            " | discharge_threshold=€%.4f (avg×1.1)"
+            " | SOC=%.1f%%"
+            " | SOC_limits=[%.0f%%, %.0f%%]",
             current_price,
             avg_price,
-            data.battery_soc,
+            len(future_prices),
+            charge_threshold,
+            discharge_threshold,
+            data.battery_soc if data.battery_soc is not None else -1,
+            min_soc,
+            max_soc,
         )
 
-        if current_price < avg_price * 0.9 and data.battery_soc is not None and data.battery_soc < max_soc:
+        if current_price < charge_threshold and data.battery_soc is not None and data.battery_soc < max_soc:
             data.next_action = ACTION_CHARGE
             data.target_soc = max_soc
-            _LOGGER.info("[balanced] decision=CHARGE")
-        elif current_price > avg_price * 1.1 and data.battery_soc is not None and data.battery_soc > min_soc:
+            data.decision_reason = (
+                f"Price €{current_price:.4f} < charge threshold €{charge_threshold:.4f} (avg €{avg_price:.4f} × 0.9) "
+                f"and SOC {data.battery_soc:.1f}% < max {max_soc:.0f}%"
+            )
+            _LOGGER.info("[balanced] CHARGE | €%.4f < charge_threshold €%.4f | SOC %.1f%% < max %.0f%%",
+                         current_price, charge_threshold, data.battery_soc, max_soc)
+        elif current_price > discharge_threshold and data.battery_soc is not None and data.battery_soc > min_soc:
             data.next_action = ACTION_DISCHARGE
             data.target_soc = min_soc
-            _LOGGER.info("[balanced] decision=DISCHARGE")
+            data.decision_reason = (
+                f"Price €{current_price:.4f} > discharge threshold €{discharge_threshold:.4f} (avg €{avg_price:.4f} × 1.1) "
+                f"and SOC {data.battery_soc:.1f}% > min {min_soc:.0f}%"
+            )
+            _LOGGER.info("[balanced] DISCHARGE | €%.4f > discharge_threshold €%.4f | SOC %.1f%% > min %.0f%%",
+                         current_price, discharge_threshold, data.battery_soc, min_soc)
         else:
             data.next_action = ACTION_IDLE
-            _LOGGER.info("[balanced] decision=IDLE")
+            reason = (
+                f"Price €{current_price:.4f} in moderate range "
+                f"(charge=€{charge_threshold:.4f}, discharge=€{discharge_threshold:.4f}, avg=€{avg_price:.4f})"
+            )
+            data.decision_reason = reason
+            _LOGGER.info("[balanced] IDLE | %s", reason)
 
     def _parse_datetime(self, time_str: str | datetime) -> datetime:
         """Parse an ISO 8601 string or passthrough an existing datetime."""
