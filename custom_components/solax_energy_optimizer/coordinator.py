@@ -16,7 +16,7 @@ from .const import (
     ACTION_CHARGE,
     ACTION_DISCHARGE,
     ACTION_IDLE,
-    CONF_FRANK_ENERGIE_ENTITY,
+    CONF_ELECTRICITY_PRICES_ENTITY,
     CONF_MAX_SOC,
     CONF_MIN_SOC,
     CONF_SOLCAST_ENTITY,
@@ -38,13 +38,13 @@ class EnergyOptimizerData:
     def __init__(self) -> None:
         """Initialize data."""
         self.battery_soc: float | None = None
-        self.solar_production: float | None = None
         self.current_price: float | None = None
         self.prices_today: list[dict[str, Any]] = []
         self.prices_tomorrow: list[dict[str, Any]] = []
         self.solar_forecast: list[dict[str, Any]] = []
         self.next_action: str = ACTION_IDLE
-        self.next_action_time: datetime | None = None
+        self.last_action_time: datetime | None = None
+        self.next_update_time: datetime | None = None
         self.target_soc: float | None = None
         self.daily_cost: float = 0.0
         self.daily_savings: float = 0.0
@@ -114,6 +114,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         _LOGGER.info("--- Update cycle start ---")
         try:
             data = EnergyOptimizerData()
+            data.next_update_time = dt_util.now() + DEFAULT_UPDATE_INTERVAL
 
             # --- Battery SOC ---
             inverter_entity = self.config_entry.data[CONF_SOLAX_INVERTER_ENTITY]
@@ -146,25 +147,25 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             else:
                 _LOGGER.info("[solcast] %s: state=%s, no attributes", solcast_entity, solcast_state.state)
 
-            # --- Energy prices ---
-            frank_entity = self.config_entry.data[CONF_FRANK_ENERGIE_ENTITY]
-            frank_state = self.hass.states.get(frank_entity)
-            if frank_state is None:
-                _LOGGER.info("[frank] %s: not yet in HA state machine", frank_entity)
+            # --- Electricity prices ---
+            prices_entity = self.config_entry.data[CONF_ELECTRICITY_PRICES_ENTITY]
+            prices_state = self.hass.states.get(prices_entity)
+            if prices_state is None:
+                _LOGGER.info("[prices] %s: not yet in HA state machine", prices_entity)
             else:
                 try:
-                    data.current_price = float(frank_state.state)
-                    _LOGGER.info("[frank] %s: current_price=%.4f", frank_entity, data.current_price)
+                    data.current_price = float(prices_state.state)
+                    _LOGGER.info("[prices] %s: current_price=%.4f", prices_entity, data.current_price)
                 except (ValueError, TypeError) as e:
-                    _LOGGER.warning("[frank] %s: could not parse state='%s' as float: %s", frank_entity, frank_state.state, e)
+                    _LOGGER.warning("[prices] %s: could not parse state='%s' as float: %s", prices_entity, prices_state.state, e)
 
-                if frank_state.attributes:
-                    prices_raw = frank_state.attributes.get("prices", [])
-                    price_count = len(prices_raw) if isinstance(prices_raw, list) else "N/A"
-                    _LOGGER.info("[frank] %s: %s price entries in attributes", frank_entity, price_count)
-                    data.prices_today = prices_raw if isinstance(prices_raw, list) else []
+                if prices_state.attributes:
+                    price_entries = prices_state.attributes.get("prices", [])
+                    entry_count = len(price_entries) if isinstance(price_entries, list) else "N/A"
+                    _LOGGER.info("[prices] %s: %s price entries in attributes", prices_entity, entry_count)
+                    data.prices_today = price_entries if isinstance(price_entries, list) else []
                 else:
-                    _LOGGER.warning("[frank] %s: entity has no attributes", frank_entity)
+                    _LOGGER.warning("[prices] %s: entity has no attributes", prices_entity)
 
             # --- Optimization ---
             _LOGGER.info(
@@ -203,7 +204,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         if data.battery_soc is not None and data.battery_soc < min_soc:
             data.next_action = ACTION_CHARGE
             data.target_soc = min_soc
-            data.next_action_time = dt_util.now()
+            data.last_action_time = dt_util.now()
             _LOGGER.info(
                 "[optimizer] safety override: SOC=%.1f%% < min=%.0f%%, forcing CHARGE to %.0f%%",
                 data.battery_soc,
@@ -222,10 +223,10 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             self._optimize_balanced(data)
 
         _LOGGER.info(
-            "[optimizer] result: action=%s, target_soc=%s%%, next_action_time=%s",
+            "[optimizer] result: action=%s, target_soc=%s%%, last_action_time=%s",
             data.next_action,
             data.target_soc,
-            data.next_action_time,
+            data.last_action_time,
         )
 
     def _optimize_minimize_cost(self, data: EnergyOptimizerData) -> None:
@@ -236,27 +237,27 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             return
 
         current_time = datetime.now()
-        prices_ahead = []
+        future_prices = []
         for p in data.prices_today:
             try:
                 if not isinstance(p, dict):
                     _LOGGER.warning("[minimize_cost] unexpected price entry type %s: %s", type(p).__name__, p)
                     continue
-                parsed_naive = self._parse_time(p.get("from", "")).replace(tzinfo=None)
+                parsed_naive = self._parse_datetime(p.get("from", "")).replace(tzinfo=None)
                 current_naive = current_time.replace(tzinfo=None)
                 if parsed_naive >= current_naive:
-                    prices_ahead.append(p)
+                    future_prices.append(p)
             except Exception as e:
                 _LOGGER.error("[minimize_cost] error processing price entry %s: %s", p, e, exc_info=True)
 
-        if not prices_ahead:
+        if not future_prices:
             _LOGGER.info("[minimize_cost] no future prices found, action=idle")
             data.next_action = ACTION_IDLE
             return
 
-        prices_sorted = sorted(prices_ahead, key=lambda x: float(x.get("price", 0)))
-        lowest_price = prices_sorted[0]
-        highest_price = prices_sorted[-1]
+        prices_by_value = sorted(future_prices, key=lambda x: float(x.get("price", 0)))
+        lowest_price = prices_by_value[0]
+        highest_price = prices_by_value[-1]
 
         try:
             lowest_price_val = float(lowest_price.get("price", 0))
@@ -267,36 +268,36 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             return
 
         price_range = highest_price_val - lowest_price_val
-        low_threshold = lowest_price_val + (price_range * 0.25)
-        high_threshold = highest_price_val - (price_range * 0.25)
+        cheap_price_threshold = lowest_price_val + (price_range * 0.25)
+        expensive_price_threshold = highest_price_val - (price_range * 0.25)
         current_price = data.current_price or 0
         min_soc = float(self.config_entry.data.get(CONF_MIN_SOC, 20))
         max_soc = float(self.config_entry.data.get(CONF_MAX_SOC, 95))
 
         _LOGGER.info(
-            "[minimize_cost] price: current=%.4f, range=[%.4f, %.4f], thresholds=[%.4f, %.4f] | soc=%.1f%%, limits=[%.0f%%, %.0f%%]",
+            "[minimize_cost] price: current=%.4f, range=[%.4f, %.4f], cheap_threshold=%.4f, expensive_threshold=%.4f | soc=%.1f%%, limits=[%.0f%%, %.0f%%]",
             current_price,
             lowest_price_val,
             highest_price_val,
-            low_threshold,
-            high_threshold,
+            cheap_price_threshold,
+            expensive_price_threshold,
             data.battery_soc if data.battery_soc is not None else -1,
             min_soc,
             max_soc,
         )
 
-        if current_price <= low_threshold and data.battery_soc is not None and data.battery_soc < max_soc:
+        if current_price <= cheap_price_threshold and data.battery_soc is not None and data.battery_soc < max_soc:
             data.next_action = ACTION_CHARGE
             data.target_soc = max_soc
-            data.next_action_time = dt_util.now()
-            _LOGGER.info("[minimize_cost] decision=CHARGE (price %.4f <= low_threshold %.4f, soc %.1f%% < max %.0f%%)",
-                         current_price, low_threshold, data.battery_soc, max_soc)
-        elif current_price >= high_threshold and data.battery_soc is not None and data.battery_soc > min_soc:
+            data.last_action_time = dt_util.now()
+            _LOGGER.info("[minimize_cost] decision=CHARGE (price %.4f <= cheap_threshold %.4f, soc %.1f%% < max %.0f%%)",
+                         current_price, cheap_price_threshold, data.battery_soc, max_soc)
+        elif current_price >= expensive_price_threshold and data.battery_soc is not None and data.battery_soc > min_soc:
             data.next_action = ACTION_DISCHARGE
             data.target_soc = min_soc
-            data.next_action_time = dt_util.now()
-            _LOGGER.info("[minimize_cost] decision=DISCHARGE (price %.4f >= high_threshold %.4f, soc %.1f%% > min %.0f%%)",
-                         current_price, high_threshold, data.battery_soc, min_soc)
+            data.last_action_time = dt_util.now()
+            _LOGGER.info("[minimize_cost] decision=DISCHARGE (price %.4f >= expensive_threshold %.4f, soc %.1f%% > min %.0f%%)",
+                         current_price, expensive_price_threshold, data.battery_soc, min_soc)
         else:
             data.next_action = ACTION_IDLE
             _LOGGER.info("[minimize_cost] decision=IDLE")
@@ -313,7 +314,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
 
         next_solar_period = None
         for forecast in data.solar_forecast:
-            forecast_time = self._parse_time(forecast.get("period_start", ""))
+            forecast_time = self._parse_datetime(forecast.get("period_start", ""))
             if forecast_time > current_time and forecast.get("pv_estimate", 0) > 1.0:
                 next_solar_period = forecast
                 break
@@ -361,18 +362,18 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
 
         current_time = datetime.now()
         current_naive = current_time.replace(tzinfo=None)
-        prices_ahead = []
+        future_prices = []
         for p in data.prices_today:
-            parsed_naive = self._parse_time(p.get("from", "")).replace(tzinfo=None)
+            parsed_naive = self._parse_datetime(p.get("from", "")).replace(tzinfo=None)
             if parsed_naive >= current_naive:
-                prices_ahead.append(p)
+                future_prices.append(p)
 
-        if not prices_ahead:
+        if not future_prices:
             _LOGGER.info("[balanced] no future prices, action=idle")
             data.next_action = ACTION_IDLE
             return
 
-        avg_price = sum(float(p.get("price", 0)) for p in prices_ahead) / len(prices_ahead)
+        avg_price = sum(float(p.get("price", 0)) for p in future_prices) / len(future_prices)
         current_price = data.current_price or 0
 
         _LOGGER.info(
@@ -394,15 +395,15 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             data.next_action = ACTION_IDLE
             _LOGGER.info("[balanced] decision=IDLE")
 
-    def _parse_time(self, time_str: str | datetime) -> datetime:
-        """Parse time string or datetime to datetime."""
+    def _parse_datetime(self, time_str: str | datetime) -> datetime:
+        """Parse an ISO 8601 string or passthrough an existing datetime."""
         try:
             if isinstance(time_str, datetime):
                 return time_str
             if isinstance(time_str, str):
                 return datetime.fromisoformat(time_str.replace("Z", "+00:00"))
-            _LOGGER.warning("Unexpected type for time parsing: %s (%s)", time_str, type(time_str).__name__)
+            _LOGGER.warning("Unexpected type for datetime parsing: %s (%s)", time_str, type(time_str).__name__)
             return datetime.now()
         except (ValueError, AttributeError, TypeError) as e:
-            _LOGGER.warning("Could not parse time '%s': %s", time_str, e)
+            _LOGGER.warning("Could not parse datetime '%s': %s", time_str, e)
             return datetime.now()

@@ -7,7 +7,8 @@ DOMAIN: Final = "solax_energy_optimizer"
 # Configuration keys
 CONF_SOLAX_INVERTER_ENTITY: Final = "solax_inverter_entity"
 CONF_SOLCAST_ENTITY: Final = "solcast_entity"
-CONF_FRANK_ENERGIE_ENTITY: Final = "frank_energie_entity"
+CONF_ELECTRICITY_PRICES_ENTITY: Final = "frank_energie_entity"
+CONF_FRANK_ENERGIE_ENTITY = CONF_ELECTRICITY_PRICES_ENTITY  # backwards compat for existing config entries
 CONF_BATTERY_CAPACITY: Final = "battery_capacity"
 CONF_MAX_CHARGE_RATE: Final = "max_charge_rate"
 CONF_MAX_DISCHARGE_RATE: Final = "max_discharge_rate"
@@ -35,7 +36,8 @@ STRATEGIES: Final = [
 # Entity keys
 ENTITY_CURRENT_STRATEGY: Final = "current_strategy"
 ENTITY_NEXT_ACTION: Final = "next_action"
-ENTITY_NEXT_ACTION_TIME: Final = "next_action_time"
+ENTITY_LAST_ACTION_TIME: Final = "last_action_time"
+ENTITY_NEXT_UPDATE_TIME: Final = "next_update_time"
 ENTITY_DAILY_COST: Final = "daily_cost"
 ENTITY_DAILY_SAVINGS: Final = "daily_savings"
 ENTITY_MONTHLY_COST: Final = "monthly_cost"
@@ -51,10 +53,6 @@ ACTION_IDLE: Final = "idle"
 
 # Attributes
 ATTR_BATTERY_SOC: Final = "battery_soc"
-ATTR_SOLAR_PRODUCTION: Final = "solar_production"
-ATTR_GRID_POWER: Final = "grid_power"
 ATTR_CURRENT_PRICE: Final = "current_price"
-ATTR_NEXT_LOW_PRICE: Final = "next_low_price"
-ATTR_NEXT_HIGH_PRICE: Final = "next_high_price"
 ATTR_SOLAR_FORECAST: Final = "solar_forecast"
 ATTR_DRY_RUN_MODE: Final = "dry_run_mode"

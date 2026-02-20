@@ -27,10 +27,11 @@ from .const import (
     DOMAIN,
     ENTITY_DAILY_COST,
     ENTITY_DAILY_SAVINGS,
+    ENTITY_LAST_ACTION_TIME,
     ENTITY_MONTHLY_COST,
     ENTITY_MONTHLY_SAVINGS,
     ENTITY_NEXT_ACTION,
-    ENTITY_NEXT_ACTION_TIME,
+    ENTITY_NEXT_UPDATE_TIME,
 )
 from .coordinator import EnergyOptimizerCoordinator, EnergyOptimizerData
 
@@ -54,11 +55,18 @@ SENSORS: tuple[EnergyOptimizerSensorDescription, ...] = (
         value_fn=lambda data: data.next_action,
     ),
     EnergyOptimizerSensorDescription(
-        key=ENTITY_NEXT_ACTION_TIME,
-        translation_key="next_action_time",
-        name="Next action time",
+        key=ENTITY_LAST_ACTION_TIME,
+        translation_key="last_action_time",
+        name="Last action time",
         device_class=SensorDeviceClass.TIMESTAMP,
-        value_fn=lambda data: data.next_action_time,
+        value_fn=lambda data: data.last_action_time,
+    ),
+    EnergyOptimizerSensorDescription(
+        key=ENTITY_NEXT_UPDATE_TIME,
+        translation_key="next_update_time",
+        name="Next update time",
+        device_class=SensorDeviceClass.TIMESTAMP,
+        value_fn=lambda data: data.next_update_time,
     ),
     EnergyOptimizerSensorDescription(
         key=ENTITY_DAILY_COST,
