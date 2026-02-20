@@ -136,19 +136,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
                         str(e),
                     )
             else:
-                _LOGGER.error("Battery SOC entity %s not found", inverter_entity)
-                # List available Solax entities to help with configuration
-                available_entities = [
-                    entity_id for entity_id in self.hass.states.async_entity_ids()
-                    if "solax" in entity_id.lower() or "battery" in entity_id.lower() or "soc" in entity_id.lower() or "capacity" in entity_id.lower()
-                ]
-                if available_entities:
-                    _LOGGER.error("Available Solax/battery/capacity entities (%d found): %s", len(available_entities), available_entities[:20])
-                else:
-                    _LOGGER.error("No Solax or battery entities found. Is the Solax Modbus integration loaded?")
-                    # Show first 50 entities to help identify the issue
-                    all_entities = list(self.hass.states.async_entity_ids())[:50]
-                    _LOGGER.error("First 50 entities in system: %s", all_entities)
+                _LOGGER.debug("Battery SOC entity %s not yet available, will retry on next update", inverter_entity)
 
             # Get solar forecast
             solcast_entity = self.config_entry.data[CONF_SOLCAST_ENTITY]
@@ -157,14 +145,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
                 # Extract forecast data from attributes
                 data.solar_forecast = solcast_state.attributes.get("forecasts", [])
             elif not solcast_state:
-                _LOGGER.warning("Solcast entity %s not found", solcast_entity)
-                # List available Solcast entities to help with configuration
-                available_entities = [
-                    entity_id for entity_id in self.hass.states.async_entity_ids()
-                    if "solcast" in entity_id.lower() or "solar" in entity_id.lower() or "forecast" in entity_id.lower()
-                ]
-                if available_entities:
-                    _LOGGER.info("Available Solcast/solar entities: %s", available_entities)
+                _LOGGER.debug("Solcast entity %s not yet available, will retry on next update", solcast_entity)
 
             # Get energy prices
             frank_entity = self.config_entry.data[CONF_FRANK_ENERGIE_ENTITY]
