@@ -10,7 +10,7 @@ from homeassistant.helpers import selector
 
 from .const import (
     CONF_BATTERY_CAPACITY,
-    CONF_FRANK_ENERGIE_ENTITY,
+    CONF_ELECTRICITY_PRICES_ENTITY,
     CONF_MAX_CHARGE_RATE,
     CONF_MAX_DISCHARGE_RATE,
     CONF_MAX_SOC,
@@ -35,16 +35,14 @@ class SolaxEnergyOptimizerConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            # Validate that entities exist
             if not self.hass.states.get(user_input[CONF_SOLAX_INVERTER_ENTITY]):
                 errors[CONF_SOLAX_INVERTER_ENTITY] = "entity_not_found"
             if not self.hass.states.get(user_input[CONF_SOLCAST_ENTITY]):
                 errors[CONF_SOLCAST_ENTITY] = "entity_not_found"
-            if not self.hass.states.get(user_input[CONF_FRANK_ENERGIE_ENTITY]):
-                errors[CONF_FRANK_ENERGIE_ENTITY] = "entity_not_found"
+            if not self.hass.states.get(user_input[CONF_ELECTRICITY_PRICES_ENTITY]):
+                errors[CONF_ELECTRICITY_PRICES_ENTITY] = "entity_not_found"
 
             if not errors:
-                # Create a unique ID based on the configuration
                 await self.async_set_unique_id(
                     f"{user_input[CONF_SOLAX_INVERTER_ENTITY]}_optimizer"
                 )
@@ -63,7 +61,7 @@ class SolaxEnergyOptimizerConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_SOLCAST_ENTITY): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain="sensor")
                 ),
-                vol.Required(CONF_FRANK_ENERGIE_ENTITY): selector.EntitySelector(
+                vol.Required(CONF_ELECTRICITY_PRICES_ENTITY): selector.EntitySelector(
                     selector.EntitySelectorConfig(domain="sensor")
                 ),
                 vol.Required(CONF_BATTERY_CAPACITY): selector.NumberSelector(

@@ -4,7 +4,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import Any
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -12,18 +12,16 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import CURRENCY_EURO, UnitOfEnergy
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CURRENCY_EURO
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
-
-if TYPE_CHECKING:
-    from homeassistant.core import HomeAssistant
-    from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     ATTR_BATTERY_SOC,
     ATTR_CURRENT_PRICE,
     ATTR_DRY_RUN_MODE,
-    ATTR_SOLAR_FORECAST,
     DOMAIN,
     ENTITY_DAILY_COST,
     ENTITY_DAILY_SAVINGS,
@@ -34,9 +32,7 @@ from .const import (
     ENTITY_NEXT_UPDATE_TIME,
 )
 from .coordinator import EnergyOptimizerCoordinator, EnergyOptimizerData
-
-if TYPE_CHECKING:
-    from . import EnergyOptimizerConfigEntry
+from . import EnergyOptimizerConfigEntry
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -151,7 +147,7 @@ class EnergyOptimizerSensor(
         return self.entity_description.value_fn(self.coordinator.data)
 
     @property
-    def extra_state_attributes(self) -> dict[str, any]:
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Return additional state attributes."""
         if self.entity_description.key == ENTITY_NEXT_ACTION:
             return {

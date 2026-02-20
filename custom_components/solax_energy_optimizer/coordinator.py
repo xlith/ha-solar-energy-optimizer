@@ -3,14 +3,12 @@ from __future__ import annotations
 
 from datetime import datetime
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
-
-if TYPE_CHECKING:
-    from homeassistant.config_entries import ConfigEntry
-    from homeassistant.core import HomeAssistant
 
 from .const import (
     ACTION_CHARGE,
@@ -236,7 +234,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             data.next_action = ACTION_IDLE
             return
 
-        current_time = datetime.now()
+        current_naive = datetime.now().replace(tzinfo=None)
         future_prices = []
         for p in data.prices_today:
             try:
@@ -244,7 +242,6 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
                     _LOGGER.warning("[minimize_cost] unexpected price entry type %s: %s", type(p).__name__, p)
                     continue
                 parsed_naive = self._parse_datetime(p.get("from", "")).replace(tzinfo=None)
-                current_naive = current_time.replace(tzinfo=None)
                 if parsed_naive >= current_naive:
                     future_prices.append(p)
             except Exception as e:
@@ -360,8 +357,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             data.next_action = ACTION_IDLE
             return
 
-        current_time = datetime.now()
-        current_naive = current_time.replace(tzinfo=None)
+        current_naive = datetime.now().replace(tzinfo=None)
         future_prices = []
         for p in data.prices_today:
             parsed_naive = self._parse_datetime(p.get("from", "")).replace(tzinfo=None)
