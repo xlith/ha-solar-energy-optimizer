@@ -15,7 +15,6 @@ from homeassistant.components.sensor import (
 from homeassistant.const import (
     CURRENCY_EURO,
     PERCENTAGE,
-    UnitOfEnergy,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -137,7 +136,6 @@ SENSORS: tuple[EnergyOptimizerSensorDescription, ...] = (
         translation_key="solar_forecast_today",
         name="Solar forecast today",
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
-        device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.MEASUREMENT,
         icon="mdi:solar-power",
         value_fn=lambda data: (
