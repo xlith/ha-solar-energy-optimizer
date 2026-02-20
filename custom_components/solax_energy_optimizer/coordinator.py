@@ -255,7 +255,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
         _LOGGER.debug("Price data available: %d entries", len(data.prices_today))
         _LOGGER.debug("Price data structure: %s", data.prices_today[:2] if len(data.prices_today) >= 2 else data.prices_today)
 
-        current_hour = datetime.now().hour
+        current_time = datetime.now()
         prices_ahead = []
         for p in data.prices_today:
             try:
@@ -264,7 +264,11 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
                     continue
                 time_from = p.get("from", "")
                 parsed_time = self._parse_time(time_from)
-                if parsed_time.hour >= current_hour:
+                # Compare full datetime, not just hours, to handle timezone and date properly
+                # Make both timezone-naive for comparison
+                parsed_naive = parsed_time.replace(tzinfo=None) if parsed_time.tzinfo else parsed_time
+                current_naive = current_time.replace(tzinfo=None) if current_time.tzinfo else current_time
+                if parsed_naive >= current_naive:
                     prices_ahead.append(p)
             except Exception as e:
                 _LOGGER.error("Error processing price entry %s: %s", p, str(e), exc_info=True)
@@ -399,8 +403,14 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             data.next_action = ACTION_IDLE
             return
 
-        current_hour = datetime.now().hour
-        prices_ahead = [p for p in data.prices_today if self._parse_time(p.get("from", "")).hour >= current_hour]
+        current_time = datetime.now()
+        current_naive = current_time.replace(tzinfo=None) if current_time.tzinfo else current_time
+        prices_ahead = []
+        for p in data.prices_today:
+            parsed_time = self._parse_time(p.get("from", ""))
+            parsed_naive = parsed_time.replace(tzinfo=None) if parsed_time.tzinfo else parsed_time
+            if parsed_naive >= current_naive:
+                prices_ahead.append(p)
 
         if not prices_ahead:
             data.next_action = ACTION_IDLE
