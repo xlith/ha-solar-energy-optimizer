@@ -4,7 +4,7 @@
   "codeowners": ["@xlith"],
   "config_flow": true,
   "dependencies": [],
-  "after_dependencies": ["frank_energie"],
+  "after_dependencies": ["frank_energie", "solax_modbus", "solcast_solar"],
   "documentation": "https://github.com/xlith/solax-energy-optimizer",
   "integration_type": "service",
   "iot_class": "calculated",
