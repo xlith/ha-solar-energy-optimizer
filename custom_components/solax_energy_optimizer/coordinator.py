@@ -175,6 +175,15 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
                     _LOGGER.warning("Frank Energie entity has no attributes")
             else:
                 _LOGGER.error("Frank Energie entity not found: %s", frank_entity)
+                # List available Frank Energie entities to help with configuration
+                available_entities = [
+                    entity_id for entity_id in self.hass.states.async_entity_ids()
+                    if "frank" in entity_id.lower() or "price" in entity_id.lower()
+                ]
+                if available_entities:
+                    _LOGGER.info("Available price-related entities: %s", available_entities)
+                else:
+                    _LOGGER.warning("No Frank Energie or price entities found. Is the Frank Energie integration loaded?")
 
             # Log current state before optimization
             _LOGGER.debug(
