@@ -156,7 +156,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
                     and f.get("pv_estimate", 0) > 0
                 ][:3]
                 upcoming_str = ", ".join(
-                    f"{f.get('period_start', '?')[11:16]}={f.get('pv_estimate', 0):.2f}kW"
+                    f"{self._parse_datetime(f.get('period_start', '')).strftime('%H:%M')}={f.get('pv_estimate', 0):.2f}kW"
                     for f in upcoming
                 ) or "none"
                 _LOGGER.info(
