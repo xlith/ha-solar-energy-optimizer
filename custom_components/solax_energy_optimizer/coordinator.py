@@ -140,12 +140,15 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
                 # List available Solax entities to help with configuration
                 available_entities = [
                     entity_id for entity_id in self.hass.states.async_entity_ids()
-                    if "solax" in entity_id.lower() or "battery" in entity_id.lower() or "soc" in entity_id.lower()
+                    if "solax" in entity_id.lower() or "battery" in entity_id.lower() or "soc" in entity_id.lower() or "capacity" in entity_id.lower()
                 ]
                 if available_entities:
-                    _LOGGER.info("Available Solax/battery entities: %s", available_entities)
+                    _LOGGER.error("Available Solax/battery/capacity entities (%d found): %s", len(available_entities), available_entities[:20])
                 else:
-                    _LOGGER.warning("No Solax or battery entities found. Is the Solax Modbus integration loaded?")
+                    _LOGGER.error("No Solax or battery entities found. Is the Solax Modbus integration loaded?")
+                    # Show first 50 entities to help identify the issue
+                    all_entities = list(self.hass.states.async_entity_ids())[:50]
+                    _LOGGER.error("First 50 entities in system: %s", all_entities)
 
             # Get solar forecast
             solcast_entity = self.config_entry.data[CONF_SOLCAST_ENTITY]
