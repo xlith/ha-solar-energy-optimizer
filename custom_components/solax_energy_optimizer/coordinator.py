@@ -152,7 +152,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
                 # Log the next 3 non-zero solar periods for context
                 upcoming = [
                     f for f in forecasts
-                    if self._parse_datetime(f.get("period_start", "")) > datetime.now()
+                    if self._parse_datetime(f.get("period_start", "")) > dt_util.now()
                     and f.get("pv_estimate", 0) > 0
                 ][:3]
                 upcoming_str = ", ".join(
@@ -261,15 +261,14 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             _LOGGER.info("[minimize_cost] no price data → idle")
             return
 
-        current_naive = datetime.now().replace(tzinfo=None)
+        now = dt_util.now()
         future_prices = []
         for p in data.prices_today:
             try:
                 if not isinstance(p, dict):
                     _LOGGER.warning("[minimize_cost] unexpected price entry type %s: %s", type(p).__name__, p)
                     continue
-                parsed_naive = self._parse_datetime(p.get("from", "")).replace(tzinfo=None)
-                if parsed_naive >= current_naive:
+                if self._parse_datetime(p.get("from", "")) >= now:
                     future_prices.append(p)
             except Exception as e:
                 _LOGGER.error("[minimize_cost] error processing price entry %s: %s", p, e, exc_info=True)
@@ -365,13 +364,13 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             _LOGGER.info("[maximize_self_consumption] no solar forecast → idle")
             return
 
-        current_time = datetime.now()
+        now = dt_util.now()
         max_soc = float(self.config_entry.data.get(CONF_MAX_SOC, 95))
 
         next_solar_period = None
         for forecast in data.solar_forecast:
             forecast_time = self._parse_datetime(forecast.get("period_start", ""))
-            if forecast_time > current_time and forecast.get("pv_estimate", 0) > 1.0:
+            if forecast_time > now and forecast.get("pv_estimate", 0) > 1.0:
                 next_solar_period = forecast
                 break
 
@@ -450,10 +449,10 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             _LOGGER.info("[balanced] no price data → idle")
             return
 
-        current_naive = datetime.now().replace(tzinfo=None)
+        now = dt_util.now()
         future_prices = [
             p for p in data.prices_today
-            if self._parse_datetime(p.get("from", "")).replace(tzinfo=None) >= current_naive
+            if self._parse_datetime(p.get("from", "")) >= now
         ]
 
         if not future_prices:
@@ -520,7 +519,7 @@ class EnergyOptimizerCoordinator(DataUpdateCoordinator[EnergyOptimizerData]):
             if isinstance(time_str, str):
                 return datetime.fromisoformat(time_str.replace("Z", "+00:00"))
             _LOGGER.warning("Unexpected type for datetime parsing: %s (%s)", time_str, type(time_str).__name__)
-            return datetime.now()
+            return dt_util.now()
         except (ValueError, AttributeError, TypeError) as e:
             _LOGGER.warning("Could not parse datetime '%s': %s", time_str, e)
-            return datetime.now()
+            return dt_util.now()
